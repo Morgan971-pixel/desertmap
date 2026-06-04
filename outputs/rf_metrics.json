@@ -1,0 +1,8 @@
+{
+  "Accuracy": 0.835114082856552,
+  "Precision (food desert class)": 0.41601008509297194,
+  "Recall (food desert class)": 0.7100591715976331,
+  "F1 (food desert class)": 0.5246422893481717,
+  "ROC-AUC": 0.8856432576327482,
+  "Average Precision": 0.5242478410711806
+}
