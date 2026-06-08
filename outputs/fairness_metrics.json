@@ -1,0 +1,9 @@
+{
+  "full_model_f1": 0.48911798396334477,
+  "race_removed_f1": 0.467416906568961,
+  "f1_delta": 0.02170107739438376,
+  "holc_cd_pred_rate": 0.2540095725921572,
+  "holc_ab_pred_rate": 0.16156914893617022,
+  "holc_odds_ratio": 1.5721415521753266,
+  "counterfactual_flip_rate": 0.33619105939987753
+}
