@@ -21,6 +21,7 @@ env/
 data/raw/
 data/processed/
 !data/raw/holc_tract_crosswalk.csv
+!data/raw/CenPop2010_Mean_TR.txt
 
 # Environment
 .env
