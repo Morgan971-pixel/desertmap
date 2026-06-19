@@ -18,7 +18,7 @@ env/
 *.ipynb_checkpoints
 
 # Data — raw files are large; processed files are reproducible
-data/raw/
+data/raw/*
 data/processed/
 !data/raw/holc_tract_crosswalk.csv
 !data/raw/CenPop2010_Mean_TR.txt
