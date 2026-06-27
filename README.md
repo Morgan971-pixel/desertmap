@@ -96,6 +96,8 @@ The HOLC crosswalk (Mapping Inequality v3, Nelson et al. 2023) maps 1930s neighb
 
 The Streamlit app loads pre-computed predictions for all 72,531 tracts and allows tract-level exploration with SHAP explanations.
 
+**Live demo:** [desertmap.streamlit.app](https://desertmap.streamlit.app)
+
 ```bash
 pip install -r requirements.txt
 streamlit run app/streamlit_app.py
