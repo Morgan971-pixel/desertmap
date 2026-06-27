@@ -96,6 +96,8 @@ The HOLC crosswalk (Mapping Inequality v3, Nelson et al. 2023) maps 1930s neighb
 
 The Streamlit app loads pre-computed predictions for all 72,531 tracts and allows tract-level exploration with SHAP explanations.
 
+![DesertMap interactive map — 72,531 U.S. census tracts colored by predicted food desert probability](outputs/figures/app_map_preview.png)
+
 **Live demo:** [desertmap.streamlit.app](https://desertmap.streamlit.app)
 
 ```bash
