@@ -16,7 +16,6 @@ st.set_page_config(
 ROOT          = pathlib.Path(__file__).parent.parent
 PARQUET_PATH  = ROOT / "outputs" / "tract_predictions_shap.parquet"
 CENTROID_PATH = ROOT / "data" / "raw" / "CenPop2010_Mean_TR.txt"
-FIG_DIR       = ROOT / "outputs" / "figures"
 
 FEATURE_LABELS = {
     "MedianFamilyIncome": "Median Family Income",
@@ -256,11 +255,19 @@ html, body, [class*="css"], h1, h2, h3, p {
 /* ── Footer ────────────────────────────────────────────────────────────────── */
 .footer {
     text-align: center;
-    color: #484f58;
+    color: #8b949e;
     font-size: 0.78rem;
     padding: 2rem 0 1rem;
     border-top: 1px solid #21262d;
     margin-top: 4rem;
+}
+.footer a { color: #8b949e; text-decoration: underline; }
+.footer a:hover { color: #c9d1d9; }
+
+/* ── Button contrast fix ───────────────────────────────────────────────────── */
+button[data-testid="stBaseButton-primary"] {
+    color: #1a0900 !important;
+    font-weight: 700 !important;
 }
 
 /* ── Scroll reveal ─────────────────────────────────────────────────────────── */
@@ -524,7 +531,7 @@ def global_shap_chart(s: pd.Series, norm: pd.Series) -> go.Figure:
         textfont=dict(color="#8b949e", size=10),
     ))
     fig.update_layout(
-        height=340, margin=dict(l=0, r=110, t=10, b=10),
+        height=340, margin=dict(l=0, r=160, t=10, b=10),
         xaxis=dict(title="Cumulative |SHAP| across all tracts", color="#8b949e",
                    gridcolor="#21262d", showticklabels=False),
         yaxis=dict(color="#e6edf3", tickfont=dict(size=11)),
@@ -538,11 +545,13 @@ def global_shap_chart(s: pd.Series, norm: pd.Series) -> go.Figure:
 def main():
     df = load_data()
     shap_s, shap_norm = global_shap_proxy(df)
+    _rates_hero = holc_rates()
+    _hero_ratio = (_rates_hero["C"] + _rates_hero["D"]) / (_rates_hero["A"] + _rates_hero["B"])
 
     # ════════════════════════════════════════════════════════════════════════
     # HERO
     # ════════════════════════════════════════════════════════════════════════
-    st.markdown("""
+    st.markdown(f"""
     <div class="hero">
         <p class="hero-eyebrow">AI4ALL Ignite &nbsp;·&nbsp; DesertMap &nbsp;·&nbsp; Machine Learning &amp; Fairness Audit</p>
         <h1 class="hero-headline">19 Million Americans<br>Live in Food Deserts</h1>
@@ -561,7 +570,7 @@ def main():
                 <span>qualify as food deserts</span>
             </div>
             <div class="hero-pill hero-pill-red reveal-scale d3">
-                <strong><span class="counter" data-count="1.57" data-suffix="×" data-decimals="2">0×</span></strong>
+                <strong><span class="counter" data-count="{_hero_ratio:.2f}" data-suffix="×" data-decimals="2">0×</span></strong>
                 <span>HOLC redlining disparity detected</span>
             </div>
         </div>
@@ -796,7 +805,7 @@ def main():
             st.session_state["map_loaded"] = True
             st.rerun()
         st.markdown(
-            "<p style='font-size:0.85rem;color:#484f58;margin-top:0.5rem'>"
+            "<p style='font-size:0.85rem;color:#8b949e;margin-top:0.5rem'>"
             "72,531 census tracts — loads the full dataset into your browser.</p>",
             unsafe_allow_html=True,
         )
@@ -829,7 +838,7 @@ def main():
             )
 
         # Apply filters
-        filtered = df[df["prediction_probability"] >= min_prob].copy()
+        filtered = df[df["prediction_probability"] >= min_prob]
         if view_opt == "Predicted food deserts":
             filtered = filtered[filtered["predicted_label"] == 1]
         elif view_opt == "True positives (correctly flagged)":
@@ -917,11 +926,11 @@ def main():
                 else '<span class="tag tag-wrong">Incorrect</span>'
             )
 
-            st.markdown('<div class="detail-panel">', unsafe_allow_html=True)
             d1, d2 = st.columns([1, 2], gap="large")
 
             with d1:
                 st.markdown(f"""
+                <div style="background:#161b22;border:1px solid #30363d;border-radius:14px;padding:1.5rem 2rem;margin-top:1.5rem">
                 <div class="detail-tract-id">Census Tract {int(row['CensusTract'])}</div>
                 <div class="detail-meta" style="margin-bottom:1rem">
                     Actual: {actual_tag}&nbsp; Predicted: {pred_tag}&nbsp; {outcome_tag}
@@ -944,10 +953,12 @@ def main():
                         <td style="color:#e6edf3;text-align:right">{float(row['pct_nhwhite10']):.1f}%</td>
                     </tr>
                 </table>
+                </div>
                 """, unsafe_allow_html=True)
 
             with d2:
                 st.markdown("""
+                <div style="background:#161b22;border:1px solid #30363d;border-radius:14px;padding:1.5rem 2rem;margin-top:1.5rem">
                 <p style="font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;
                           color:#8b949e;font-weight:700;margin:0 0 0.3rem">
                     Why did the model predict this?
@@ -957,14 +968,14 @@ def main():
                     <span style="color:#3b82f6">Blue bars</span> push away from it.
                     Longer = stronger influence.
                 </p>
+                </div>
                 """, unsafe_allow_html=True)
                 st.plotly_chart(shap_bar(row), use_container_width=True,
                                 config={"displayModeBar": False})
 
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown("""
-            <p style="font-size:0.88rem;color:#484f58;margin-top:0.5rem;text-align:center">
+            <p style="font-size:0.88rem;color:#8b949e;margin-top:0.5rem;text-align:center">
                 Click any dot on the map to see the model's tract-level explanation.
             </p>
             """, unsafe_allow_html=True)
@@ -995,24 +1006,30 @@ def main():
     </p>
     """, unsafe_allow_html=True)
 
-    # 4 bias metric cards
+    # 4 bias metric cards — compute HOLC ratio live from data
+    rates = holc_rates()
+    cd_rate = (rates["C"] + rates["D"]) / 2 * 100
+    ab_rate = (rates["A"] + rates["B"]) / 2 * 100
+    holc_ratio = cd_rate / ab_rate
+
     b1, b2, b3, b4 = st.columns(4, gap="medium")
     cards = [
-        ("1.57", "bcard-orange", "HOLC Redlining Disparity",
-         "C- or D-graded tracts are 1.57x more likely to be predicted food deserts than "
-         "A- or B-graded tracts (25.4% vs. 16.2%).",
-         "d1", "1.57", "x", "2"),
-        ("5.9", "bcard-red", "False Positive Rate Disparity",
+        (f"{holc_ratio:.2f}", "bcard-orange", "HOLC Redlining Disparity",
+         f"C- or D-graded tracts are {holc_ratio:.2f}x more likely to be predicted food deserts "
+         f"than A- or B-graded tracts ({cd_rate:.1f}% vs. {ab_rate:.1f}%).",
+         "d1", f"{holc_ratio:.2f}", "x", "2"),
+        ("5.9", "bcard-red", "Misclassification Is Unequal",
          "The model incorrectly flags high-Black-population tracts as food deserts at 5.9x "
-         "the rate of low-Black-population tracts.",
+         "the rate of low-Black-population tracts. (False positive rate disparity.)",
          "d2", "5.9", "x", "1"),
-        ("33.6", "bcard-red", "Counterfactual Flip Rate",
+        ("33.6", "bcard-red", "When Race Changes, Predictions Change",
          "When racial composition features are reset to the national median, holding all else "
-         "constant, 33.6% of food desert predictions flip to not a food desert.",
+         "constant, 33.6% of food desert predictions flip to not a food desert. "
+         "(Counterfactual probe.)",
          "d3", "33.6", "%", "1"),
-        ("-2.2", "bcard-orange", "F1 Drop: Race Removed",
+        ("-2.2", "bcard-orange", "Race Carries Independent Signal",
          "Removing % Black and % Hispanic cuts F1 by 2.2 points, confirming racial features "
-         "carry signal independent of income and poverty rate.",
+         "carry predictive signal beyond income and poverty rate. (F1 ablation.)",
          "d4", "2.2", " pts", "1"),
     ]
     for col, (num, num_cls, title, desc, delay, count_val, suffix, decimals) in zip([b1, b2, b3, b4], cards):
@@ -1112,13 +1129,17 @@ def main():
     # ── Footer ────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="footer reveal-up">
-        DesertMap &nbsp;·&nbsp; AI4ALL Ignite Accelerator &nbsp;·&nbsp;
+        DesertMap &nbsp;·&nbsp; AI4ALL Ignite Accelerator &nbsp;·&nbsp; 2026 &nbsp;·&nbsp;
+        <a href="https://github.com/Morgan971-pixel/desertmap" target="_blank">GitHub</a>
+        &nbsp;·&nbsp;
         Data: USDA Economic Research Service 2019 &nbsp;·&nbsp;
         HOLC crosswalk: Mapping Inequality v3 (Nelson et al., 2023)
     </div>
     """, unsafe_allow_html=True)
 
-    scroll_reveal_js()
+    if "js_injected" not in st.session_state:
+        st.session_state["js_injected"] = True
+        scroll_reveal_js()
 
 
 if __name__ == "__main__":
