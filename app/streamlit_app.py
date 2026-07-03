@@ -1126,6 +1126,31 @@ def main():
         (3) counterfactual racial composition probe, (4) HOLC post-prediction overlay
         """)
 
+    with st.expander("Limitations & interpretation"):
+        st.markdown("""
+        **The confounding variable challenge**
+
+        A reasonable objection: redlined areas became low-income areas, and low-income areas have poor
+        food access. The overlap with HOLC maps might reflect income concentration rather than race.
+
+        The counterfactual test addresses this directly. Racial composition features were reset to the
+        national median while holding income, poverty rate, and all other features constant for every
+        tract in the test set. **33.6% of predictions changed.** If the pattern were purely income
+        geography, removing race should not move individual predictions.
+
+        The causal chain argument does not escape the objection either. Saying "it is just income
+        geography" requires explaining why that income geography aligns with 90-year-old federal grading
+        maps — which is the redlining story, not an alternative to it.
+
+        **What this study can and cannot claim**
+
+        This is observational work. Causation is not established. The finding is that (1) the pattern
+        exists across four independent tests, (2) racial composition carries independent predictive
+        signal beyond income and poverty, and (3) that is sufficient reason to audit before any
+        deployment affecting food access decisions. Responsible deployment does not require resolving
+        the causation question. It requires disclosing the disparity.
+        """)
+
     # ── Footer ────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="footer reveal-up">

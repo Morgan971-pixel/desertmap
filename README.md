@@ -92,6 +92,18 @@ The HOLC crosswalk (Mapping Inequality v3, Nelson et al. 2023) maps 1930s neighb
 
 ---
 
+## Limitations & Interpretation
+
+**The confounding variable challenge:** Redlined areas became low-income areas; low-income areas have poor food access. The overlap with HOLC maps might simply reflect income concentration rather than race.
+
+The counterfactual test addresses this directly. Racial composition features were reset to the national median while holding income, poverty rate, and all other features constant. 33.6% of predictions changed. If the pattern were purely income geography, removing race should not move individual predictions. It does.
+
+The causal chain argument does not escape this. "It is just income geography" requires explaining why that income geography aligns with 90-year-old federal grading maps — which is the redlining story, not an alternative to it.
+
+**What this study can and cannot claim:** This is observational. Causation is not established. The finding is that (1) the pattern exists across four independent tests, (2) racial composition carries independent predictive signal beyond income and poverty, and (3) that is sufficient reason to audit the model before any deployment affecting food access decisions. Responsible use does not require resolving the causation question. It requires disclosing the disparity.
+
+---
+
 ## Interactive App
 
 The Streamlit app loads pre-computed predictions for all 72,531 tracts and allows tract-level exploration with SHAP explanations.
