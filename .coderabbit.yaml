@@ -1,0 +1,288 @@
+# CodeRabbit Configuration for AssistiveMath Web App
+# Focus: Accessibility (WCAG 2.2 AA+), TypeScript type safety, Vue 3 Composition API patterns
+
+# Language configurations
+language:
+  typescript:
+    enabled: true
+    strict_mode: true  # Enforce strict TypeScript checking
+
+  vue:
+    enabled: true
+    version: 3
+    composition_api: true  # Prefer Composition API patterns
+
+  nuxt:
+    enabled: true
+    version: 3
+
+# Review triggers
+review:
+  auto_review: true
+  request_changes: true
+  max_files_to_review: 150  # CodeRabbit reviews up to 150 files per PR
+  max_file_size: 1000  # Max lines per file for deep review
+
+# Security configurations
+security:
+  enabled: true
+  focus_areas:
+    - secrets_detection  # Detect exposed API keys, tokens
+    - dependency_scanning  # Check for vulnerable packages
+    - supabase_auth_patterns  # Review authentication implementations
+    - input_validation  # Catch unvalidated user inputs
+    - xss_prevention  # Vue template XSS vulnerabilities
+    - csrf_protection  # CSRF token handling
+
+  rules:
+    - id: supabase_hardcoded_keys
+      description: "Detect hardcoded Supabase keys"
+      pattern: "supabaseKey|SUPABASE_KEY|supabaseUrl|SUPABASE_URL"
+      severity: critical
+
+    - id: env_variables
+      description: "Ensure sensitive config uses env variables"
+      pattern: "process.env|import.meta.env"
+      severity: high
+
+    - id: auth_token_storage
+      description: "Verify auth tokens stored securely (not localStorage for sensitive operations)"
+      pattern: "localStorage|sessionStorage"
+      severity: high
+
+# Performance configurations
+performance:
+  enabled: true
+  focus_areas:
+    - nuxt_bundle_size  # Monitor chunk sizes
+    - component_lazy_loading  # Encourage lazy loading
+    - image_optimization  # Enforce image size limits
+    - fetch_patterns  # Review data fetching strategies
+    - rendering_optimization  # Check for unnecessary re-renders
+
+  rules:
+    - id: lazy_loading_components
+      description: "Use defineAsyncComponent() for heavy components"
+      pattern: "import.*from.*\\.vue"
+      suggestion: "Consider lazy loading for non-critical components"
+      severity: info
+
+    - id: computed_vs_watcher
+      description: "Prefer computed over watcher when possible"
+      pattern: "watch\\(.*,.*=>.*\\)"
+      severity: info
+
+    - id: v_for_key
+      description: "Always use key binding in v-for"
+      pattern: "v-for.*:key"
+      severity: high
+
+# Accessibility (WCAG 2.2 AA+) configurations
+accessibility:
+  enabled: true
+  wcag_level: "AA_plus"
+  focus_areas:
+    - semantic_html  # Use semantic HTML elements
+    - aria_labels  # Proper ARIA labels and attributes
+    - focus_management  # Keyboard navigation
+    - color_contrast  # Sufficient contrast ratios
+    - alt_text  # Image alt text
+    - form_accessibility  # Form labels and error messages
+    - screen_reader_support  # Screen reader compatibility
+
+  rules:
+    - id: aria_hidden_usage
+      description: "Review aria-hidden usage - may hide from screen readers"
+      pattern: "aria-hidden"
+      severity: high
+
+    - id: img_alt_text
+      description: "All img tags must have alt text"
+      pattern: "<img(?!.*alt=)"
+      severity: high
+
+    - id: form_labels
+      description: "Form inputs should be associated with labels"
+      pattern: "<input.*:id=|v-model"
+      suggestion: "Ensure corresponding <label for=':id'> exists"
+      severity: high
+
+    - id: button_accessibility
+      description: "Use semantic <button> or button role for clickable elements"
+      pattern: "@click"
+      suggestion: "Verify element is keyboard accessible and has proper role"
+      severity: high
+
+    - id: color_only_indicator
+      description: "Don't use color alone to convey information"
+      pattern: "color|style.*color|bg-|text-"
+      suggestion: "Add text or icon to accompany color coding"
+      severity: info
+
+    - id: heading_hierarchy
+      description: "Maintain proper heading hierarchy (h1 > h2 > h3)"
+      pattern: "<h[1-6]"
+      severity: info
+
+# TypeScript and Vue 3 Composition API patterns
+type_safety:
+  enabled: true
+  focus_areas:
+    - strict_typing  # No implicit any
+    - component_props  # Properly typed props
+    - event_handling  # Typed events
+    - store_types  # Pinia store typing
+    - computed_types  # Computed property types
+    - async_types  # Promise type annotations
+
+  rules:
+    - id: no_implicit_any
+      description: "Avoid implicit any types"
+      pattern: ":\\s*any|as\\s+any"
+      severity: high
+
+    - id: typed_props
+      description: "Define PropType<T> for component props"
+      pattern: "defineProps"
+      suggestion: "Use type-safe prop definitions: props: defineProps<{ ... }>()"
+      severity: high
+
+    - id: pinia_store_typing
+      description: "Use defineStore with full TypeScript support"
+      pattern: "defineStore"
+      suggestion: "Ensure store state, getters, and actions are properly typed"
+      severity: info
+
+    - id: ref_reactive_typing
+      description: "Specify types for ref() and reactive()"
+      pattern: "ref\\(|reactive\\("
+      severity: info
+
+# Vue 3 Composition API patterns
+vue_patterns:
+  enabled: true
+  focus_areas:
+    - composition_api_usage  # Prefer Composition API
+    - lifecycle_hooks  # Proper hook usage
+    - provide_inject  # Context passing
+    - template_refs  # Proper template reference usage
+    - setup_script  # Use <script setup> syntax
+
+  rules:
+    - id: script_setup_syntax
+      description: "Use <script setup> syntax for cleaner code"
+      pattern: "<script lang=\"ts\">"
+      suggestion: "Consider using <script setup lang=\"ts\"> for better readability"
+      severity: info
+
+    - id: lifecycle_composition
+      description: "Use composition API lifecycle hooks (onMounted, etc)"
+      pattern: "mounted\\(|created\\(|beforeMount\\("
+      severity: info
+
+    - id: no_instance_refs
+      description: "Avoid $refs and $emit - use setup return and defineEmits"
+      pattern: "\\$refs|\\$emit"
+      severity: info
+
+# Nuxt 3 best practices
+nuxt_patterns:
+  enabled: true
+  focus_areas:
+    - file_structure  # Nuxt 3 convention
+    - route_guards  # Proper middleware usage
+    - data_fetching  # useFetch vs useAsyncData
+    - plugin_registration  # Plugin patterns
+    - env_configuration  # Runtime config
+
+  rules:
+    - id: use_fetch_over_async_data
+      description: "Prefer useFetch() over useAsyncData() for simple cases"
+      pattern: "useAsyncData"
+      suggestion: "Consider using useFetch() for cleaner syntax"
+      severity: info
+
+    - id: runtime_config
+      description: "Use nuxt.config.ts for sensitive config"
+      pattern: "process.env|VITE_"
+      suggestion: "Use runtimeConfig in nuxt.config.ts for public/private config"
+      severity: info
+
+    - id: middleware_usage
+      description: "Use route middleware for auth/authorization"
+      pattern: "definePageMeta"
+      suggestion: "Leverage middleware for route protection"
+      severity: info
+
+# Comment style and tone
+style:
+  tone: "educational"  # Explain the why, not just the what
+  include_links: true  # Add documentation links
+  max_comment_lines: 5  # Keep comments concise
+  markdown: true  # Use markdown formatting
+
+# File patterns to ignore
+ignore:
+  - "dist/**"
+  - "node_modules/**"
+  - "coverage/**"
+  - ".nuxt/**"
+  - "*.lock"
+  - "package-lock.json"
+  - "yarn.lock"
+  - "pnpm-lock.yaml"
+  - ".env"
+  - ".env.local"
+  - ".env.*.local"
+  - "*.generated.ts"
+  - "*.d.ts"
+  - "test/**/*.spec.ts"
+  - "test/**/*.test.ts"
+
+# Auto-approval rules (optional - use conservatively)
+auto_approve:
+  enabled: false  # Require manual review for all PRs in AssistiveMath
+  rules: []
+
+# File-specific review intensity
+file_review_intensity:
+  "**/components/**/*.vue": "high"  # Deep review of components (accessibility critical)
+  "**/pages/**/*.vue": "high"  # Deep review of pages
+  "**/composables/**/*.ts": "high"  # Review composition functions
+  "**/stores/**/*.ts": "high"  # Deep review of Pinia stores
+  "**/middleware/**/*.ts": "high"  # Auth and security middleware
+  "**/utils/**/*.ts": "medium"
+  "**/__tests__/**": "low"  # Less intensive for tests
+  "*.config.ts": "medium"  # Configuration files
+
+# PR title and description requirements
+pr_checks:
+  enforce_description: false  # Optional but recommended
+  check_linked_issue: false
+
+# Feedback customization
+feedback:
+  comment_on_files: true
+  separate_file_comments: true
+  include_severity_badges: true
+  include_documentation_links: true
+
+  severity_messages:
+    critical: "🚨 CRITICAL - Must be fixed before merge"
+    high: "⚠️ HIGH - Should be addressed"
+    medium: "📋 MEDIUM - Consider addressing"
+    info: "💡 INFO - Suggestion for improvement"
+
+# Model configuration (CodeRabbit's AI settings)
+model:
+  temperature: 0.5  # Balanced confidence level
+  max_tokens: 1000
+
+# Additional context for reviews
+context:
+  audience: "accessibility-first educational app for blind/visually impaired students"
+  constraints:
+    - "WCAG 2.2 AA+ compliance is non-negotiable"
+    - "TypeScript strict mode is required"
+    - "Keyboard navigation must work flawlessly"
+    - "Screen reader compatibility is critical"
