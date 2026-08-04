@@ -17,8 +17,9 @@
   - Packages installed: 166 (175 resolved total in the lock; a few are conditional/platform markers)
 - `requires-python` set to `>=3.11,<3.13` (repo had no explicit Python pin; the upper bound was
   added because `llvmlite`/`numba`, pulled in transitively by `shap`, do not have working builds
-  above 3.12 yet). `[tool.uv].constraint-dependencies` pins `llvmlite>=0.44` and `numba>=0.60` to
-  stop the resolver from selecting an ancient `llvmlite` release that can't build on Python 3.11+.
+  above 3.12 yet). `[tool.uv].constraint-dependencies` constrains transitive dependency versions
+  for `llvmlite>=0.44` and `numba>=0.60` to prevent the resolver from selecting ancient releases
+  that can't build on Python 3.11+; the exact resolution is recorded in `uv.lock`.
 - `requirements.txt` deleted; `pyproject.toml` + `uv.lock` are now the single source of truth.
 
 ## Verification
