@@ -113,8 +113,8 @@ The Streamlit app loads pre-computed predictions for all 72,531 tracts and allow
 **Live demo:** [desertmap.streamlit.app](https://desertmap.streamlit.app)
 
 ```bash
-pip install -r requirements.txt
-streamlit run app/streamlit_app.py
+uv sync
+uv run streamlit run app/streamlit_app.py
 ```
 
 ---
@@ -124,8 +124,8 @@ streamlit run app/streamlit_app.py
 Run notebooks in order:
 
 ```bash
-pip install -r requirements.txt
-jupyter lab
+uv sync
+uv run jupyter lab
 
 # 01_eda.ipynb          — exploratory analysis and class distribution
 # 02_cleaning.ipynb     — feature engineering and data quality
@@ -166,7 +166,8 @@ desertmap/
 │   ├── baseline_metrics.json
 │   ├── rf_metrics.json
 │   └── fairness_metrics.json
-├── requirements.txt
+├── pyproject.toml
+├── uv.lock
 └── README.md
 ```
 
