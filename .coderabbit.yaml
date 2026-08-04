@@ -1,8 +1,11 @@
 # CodeRabbit Configuration for AssistiveMath Web App
 # Focus: Accessibility (WCAG 2.2 AA+), TypeScript type safety, Vue 3 Composition API patterns
 
-# Language configurations
-language:
+# Language for review output
+language: en-US
+
+# Technology stack configuration
+tools:
   typescript:
     enabled: true
     strict_mode: true  # Enforce strict TypeScript checking

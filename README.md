@@ -179,3 +179,7 @@ desertmap/
 | USDA Food Access Research Atlas 2019 | ers.usda.gov |
 | HOLC Neighborhood Grades Crosswalk | Mapping Inequality v3, Nelson et al. (2023) |
 | Census Tract Population Centroids | U.S. Census Bureau, 2010 |
+
+## CodeRabbit Integration
+Testing CodeRabbit PR review automation.
+
