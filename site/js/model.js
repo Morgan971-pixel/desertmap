@@ -7,13 +7,14 @@ export const VIEWS = {
 };
 
 export function filterIndices(t, view, minProb) {
-  if (!(view in VIEWS)) throw new Error(`unknown view: ${view}`);
+  if (!Object.hasOwn(VIEWS, view)) throw new Error(`unknown view: ${view}`);
+  const { n, p, pred, actual } = t;
   const out = [];
-  for (let i = 0; i < t.n; i++) {
-    if (t.p[i] < minProb) continue;
-    if (view === "predicted" && t.pred[i] !== 1) continue;
-    if (view === "tp" && !(t.pred[i] === 1 && t.actual[i] === 1)) continue;
-    if (view === "fp" && !(t.pred[i] === 1 && t.actual[i] === 0)) continue;
+  for (let i = 0; i < n; i++) {
+    if (!(Number.isFinite(p[i]) && p[i] >= minProb)) continue;
+    if (view === "predicted" && pred[i] !== 1) continue;
+    if (view === "tp" && !(pred[i] === 1 && actual[i] === 1)) continue;
+    if (view === "fp" && !(pred[i] === 1 && actual[i] === 0)) continue;
     out.push(i);
   }
   return out;
@@ -29,4 +30,4 @@ export function probToColor(p) {
 }
 
 export const tractId = (id) => String(id).padStart(11, "0");
-export const fmtPct = (v) => (v == null ? "n/a" : `${v.toFixed(1)}%`);
+export const fmtPct = (v) => (!Number.isFinite(v) ? "n/a" : `${v.toFixed(1)}%`);
