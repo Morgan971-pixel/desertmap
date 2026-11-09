@@ -11,6 +11,7 @@ dependencies = [
     "numpy>=1.24.0",
     "pandas>=2.0.0",
     "plotly>=5.18.0",
+    "pyarrow>=24.0.0",
     "pydeck>=0.9.0",
     "python-dotenv>=1.0.0",
     "requests>=2.31.0",
@@ -23,3 +24,8 @@ dependencies = [
 
 [tool.uv]
 constraint-dependencies = ["llvmlite>=0.44", "numba>=0.60"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]

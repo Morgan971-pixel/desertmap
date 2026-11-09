@@ -37,3 +37,4 @@ Thumbs.db
 
 # Outputs — committed selectively
 outputs/figures/.gitkeep
+scripts/commit.log

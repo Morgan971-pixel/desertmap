@@ -1,0 +1,90 @@
+{
+  "n_tracts": 72531,
+  "n_mapped": 72506,
+  "food_desert_share": 0.12812452606471716,
+  "holc": {
+    "rates": {
+      "A": 0.10845431255337319,
+      "B": 0.18018557318168213,
+      "C": 0.24167911968482544,
+      "D": 0.27396657871591906
+    },
+    "counts": {
+      "A": 1171,
+      "B": 3341,
+      "C": 7361,
+      "D": 4548
+    },
+    "cd_rate": 0.2540095725921572,
+    "ab_rate": 0.16156914893617022,
+    "ratio": 1.5721415521753266
+  },
+  "global_shap": [
+    {
+      "feature": "MedianFamilyIncome",
+      "label": "Median Family Income",
+      "total": 62916.22591379285
+    },
+    {
+      "feature": "PovertyRate",
+      "label": "Poverty Rate",
+      "total": 25663.995382346213
+    },
+    {
+      "feature": "Urban",
+      "label": "Urban Tract (yes/no)",
+      "total": 10615.211632452905
+    },
+    {
+      "feature": "pct_hunv10",
+      "label": "% Households, No Vehicle",
+      "total": 8605.321298412979
+    },
+    {
+      "feature": "pct_hisp10",
+      "label": "% Hispanic Population",
+      "total": 5921.257287882268
+    },
+    {
+      "feature": "pct_snap16",
+      "label": "% SNAP-Enrolled Households",
+      "total": 2389.3131787106395
+    },
+    {
+      "feature": "pct_nhblack10",
+      "label": "% Black Population",
+      "total": 1918.094355776906
+    },
+    {
+      "feature": "Pop2010",
+      "label": "Total Population (2010)",
+      "total": 1567.2160124406219
+    },
+    {
+      "feature": "pct_nhwhite10",
+      "label": "% White Population",
+      "total": 1128.8095975369215
+    }
+  ],
+  "metrics": {
+    "random_forest": {
+      "f1": 0.5246422893481717,
+      "precision": 0.41601008509297194,
+      "recall": 0.7100591715976331,
+      "roc_auc": 0.8856432576327482
+    },
+    "logistic_regression": {
+      "f1": 0.4383844339622642,
+      "precision": 0.3019289340101523,
+      "recall": 0.7998924152770307,
+      "roc_auc": 0.838147086213062
+    }
+  },
+  "fairness": {
+    "f1_full": 0.48911798396334477,
+    "f1_race_removed": 0.467416906568961,
+    "f1_delta_pts": 2.170107739438376,
+    "counterfactual_flip_rate": 0.33619105939987753,
+    "fpr_disparity_q4_q1": 5.9
+  }
+}
