@@ -340,10 +340,18 @@ def holc_rates():
     preds = pd.read_parquet(PARQUET_PATH, columns=["CensusTract", "predicted_label"])
     merged = crosswalk.merge(preds, on="CensusTract", how="inner")
     rates = merged.groupby("holc_grade")["predicted_label"].mean().reindex(["A", "B", "C", "D"])
-    return rates
+    cd = merged[merged["holc_grade"].isin(["C", "D"])]["predicted_label"].mean()
+    ab = merged[merged["holc_grade"].isin(["A", "B"])]["predicted_label"].mean()
+    return rates, cd, ab
 
 
-def holc_bar_chart(rates: pd.Series) -> go.Figure:
+@st.cache_data
+def food_desert_share():
+    s = pd.read_parquet(PARQUET_PATH, columns=["LILATracts_1And10"])["LILATracts_1And10"]
+    return s.mean() * 100
+
+
+def holc_bar_chart(rates: pd.Series, cd: float, ab: float) -> go.Figure:
     grade_colors = {"A": "#22c55e", "B": "#3b82f6", "C": "#f59e0b", "D": "#ef4444"}
     colors = [grade_colors[g] for g in rates.index]
     fig = go.Figure(go.Bar(
@@ -378,7 +386,7 @@ def holc_bar_chart(rates: pd.Series) -> go.Figure:
         annotations=[
             dict(
                 x=1.5, y=max(rates.values) * 120,
-                text=f"<b>C+D tracts: {(rates['C']+rates['D'])/2*100:.1f}%</b><br>vs A+B tracts: {(rates['A']+rates['B'])/2*100:.1f}%",
+                text=f"<b>C+D tracts: {cd*100:.1f}%</b><br>vs A+B tracts: {ab*100:.1f}%",
                 showarrow=False,
                 font=dict(color="#ef4444", size=11),
                 align="center",
@@ -545,8 +553,9 @@ def global_shap_chart(s: pd.Series, norm: pd.Series) -> go.Figure:
 def main():
     df = load_data()
     shap_s, shap_norm = global_shap_proxy(df)
-    _rates_hero = holc_rates()
-    _hero_ratio = (_rates_hero["C"] + _rates_hero["D"]) / (_rates_hero["A"] + _rates_hero["B"])
+    rates, _cd, _ab = holc_rates()
+    _hero_ratio = _cd / _ab
+    _fd_share = food_desert_share()
 
     # ════════════════════════════════════════════════════════════════════════
     # HERO
@@ -566,7 +575,7 @@ def main():
                 <span>census tracts analyzed</span>
             </div>
             <div class="hero-pill reveal-scale d2">
-                <strong><span class="counter" data-count="16.4" data-suffix="%" data-decimals="1">0%</span></strong>
+                <strong><span class="counter" data-count="{_fd_share:.1f}" data-suffix="%" data-decimals="1">0%</span></strong>
                 <span>qualify as food deserts</span>
             </div>
             <div class="hero-pill hero-pill-red reveal-scale d3">
@@ -941,18 +950,19 @@ def main():
                         <td style="color:#f97316;font-weight:700;text-align:right">{prob:.4f}</td>
                     </tr>
                     <tr>
-                        <td style="color:#8b949e;padding:0.3rem 0">% Black population</td>
+                        <td style="color:#8b949e;padding:0.3rem 0">% Black (model input*)</td>
                         <td style="color:#e6edf3;text-align:right">{float(row['pct_nhblack10']):.1f}%</td>
                     </tr>
                     <tr>
-                        <td style="color:#8b949e;padding:0.3rem 0">% Hispanic population</td>
+                        <td style="color:#8b949e;padding:0.3rem 0">% Hispanic (model input*)</td>
                         <td style="color:#e6edf3;text-align:right">{float(row['pct_hisp10']):.1f}%</td>
                     </tr>
                     <tr>
-                        <td style="color:#8b949e;padding:0.3rem 0">% White population</td>
+                        <td style="color:#8b949e;padding:0.3rem 0">% White (model input*)</td>
                         <td style="color:#e6edf3;text-align:right">{float(row['pct_nhwhite10']):.1f}%</td>
                     </tr>
                 </table>
+                <p style="font-size:0.78rem;color:#8b949e;margin:0.5rem 0 0">*Capped for modeling; not the census share.</p>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -1007,10 +1017,9 @@ def main():
     """, unsafe_allow_html=True)
 
     # 4 bias metric cards — compute HOLC ratio live from data
-    rates = holc_rates()
-    cd_rate = (rates["C"] + rates["D"]) / 2 * 100
-    ab_rate = (rates["A"] + rates["B"]) / 2 * 100
-    holc_ratio = cd_rate / ab_rate
+    cd_rate = _cd * 100
+    ab_rate = _ab * 100
+    holc_ratio = _cd / _ab
 
     b1, b2, b3, b4 = st.columns(4, gap="medium")
     cards = [
@@ -1050,8 +1059,7 @@ def main():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    rates = holc_rates()
-    st.plotly_chart(holc_bar_chart(rates), use_container_width=True,
+    st.plotly_chart(holc_bar_chart(rates, _cd, _ab), use_container_width=True,
                     config={"displayModeBar": False})
 
     divider()
@@ -1096,7 +1104,7 @@ def main():
             </p>
             <ul style="font-size:0.93rem;color:#c9d1d9;line-height:1.8;padding-left:1.2rem;margin:0">
                 <li>5.9x FPR disparity surfaced and documented</li>
-                <li>HOLC odds ratio of 1.57x measured and reported</li>
+                <li>C/D tracts flagged 1.57x as often as A/B tracts</li>
                 <li>SHAP makes every prediction auditable, tract by tract</li>
                 <li>Mitigations identified: equalized-odds calibration, adversarial debiasing</li>
                 <li>Model becomes evidence of the problem, not an accelerant of it</li>

@@ -87,7 +87,7 @@ Predictions from the full national dataset (N = 72,531 tracts) were joined to th
 
 **C+D prediction rate:** 25.4%  
 **A+B prediction rate:** 16.2%  
-**Odds ratio (C+D vs A+B):** 1.57x
+**Rate ratio (C+D vs A+B):** 1.57x
 
 The predicted food desert rate increases monotonically from A to D. Tracts designated "Hazardous" by HOLC appraisers in the 1930s are 2.5x more likely to be actual food deserts today (13.7% vs 3.8% for grade A) and 1.57x more likely to be predicted food deserts by the model.
 
