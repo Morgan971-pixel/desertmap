@@ -41,6 +41,11 @@ def _r(series: pd.Series, nd: int) -> list:
 
 
 def load_tracts(parquet=PARQUET, centroids=CENTROIDS, atlas=ATLAS) -> pd.DataFrame:
+    if not pathlib.Path(atlas).exists():
+        raise FileNotFoundError(
+            f"Raw USDA Food Access Research Atlas not found at {atlas}; it is required "
+            "for uncapped race shares (the parquet's pct_* columns are IQR-capped)."
+        )
     preds = pd.read_parquet(parquet)
     c = pd.read_csv(centroids)
     c["CensusTract"] = (
@@ -48,22 +53,23 @@ def load_tracts(parquet=PARQUET, centroids=CENTROIDS, atlas=ATLAS) -> pd.DataFra
         + c["COUNTYFP"].astype(str).str.zfill(3)
         + c["TRACTCE"].astype(str).str.zfill(6)
     ).astype(int)
-    df = preds.merge(c[["CensusTract", "LATITUDE", "LONGITUDE"]], on="CensusTract", how="left")
+    df = preds.merge(c[["CensusTract", "LATITUDE", "LONGITUDE"]], on="CensusTract",
+                     how="left", validate="many_to_one")
     df = df.dropna(subset=["LATITUDE", "LONGITUDE"]).reset_index(drop=True)
+    n_input = len(preds)
 
-    if pathlib.Path(atlas).exists():
-        a = pd.read_csv(atlas, usecols=["CensusTract", "Pop2010", "TractBlack",
-                                        "TractHispanic", "TractWhite"])
-        pop = a["Pop2010"].where(a["Pop2010"] > 0)
-        for src, dst in [("TractBlack", "share_black"), ("TractHispanic", "share_hisp"),
-                         ("TractWhite", "share_white")]:
-            a[dst] = (a[src] / pop * 100).clip(upper=100)
-        df = df.merge(a[["CensusTract", "share_black", "share_hisp", "share_white"]],
-                      on="CensusTract", how="left")
-    else:  # fall back to model inputs (IQR-capped); tests skip the uncapped check
-        df["share_black"] = df["pct_nhblack10"]
-        df["share_hisp"] = df["pct_hisp10"]
-        df["share_white"] = df["pct_nhwhite10"]
+    a = pd.read_csv(atlas, usecols=["CensusTract", "Pop2010", "TractBlack",
+                                    "TractHispanic", "TractWhite"])
+    pop = a["Pop2010"].where(a["Pop2010"] > 0)
+    shares = ["share_black", "share_hisp", "share_white"]
+    for src, dst in zip(["TractBlack", "TractHispanic", "TractWhite"], shares):
+        a[dst] = (a[src] / pop * 100).clip(upper=100)
+    df = df.merge(a[["CensusTract", *shares]], on="CensusTract",
+                  how="left", validate="many_to_one")
+    n_null = int(df[shares].isna().any(axis=1).sum())
+    if n_null:
+        raise ValueError(f"{n_null} tracts have null race shares after the atlas merge")
+    df.attrs["n_input"] = n_input
     return df
 
 
@@ -94,6 +100,7 @@ def tracts_payload(df: pd.DataFrame) -> dict:
 
 
 def holc_summary(crosswalk=CROSSWALK, parquet=PARQUET) -> dict:
+    # Grades E, F, blank and "C " (trailing space) are excluded on purpose to match notebook 05.
     x = pd.read_csv(crosswalk)  # grades left unstripped to match notebook 05 exactly
     preds = pd.read_parquet(parquet, columns=["CensusTract", "predicted_label"])
     m = x.merge(preds, on="CensusTract", how="inner")
@@ -154,8 +161,9 @@ def main(out_dir: pathlib.Path = OUT_DIR) -> None:
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     df = load_tracts()
-    (out_dir / "tracts.json").write_text(json.dumps(tracts_payload(df), separators=(",", ":")))
-    (out_dir / "summary.json").write_text(json.dumps(build_summary(df), indent=2))
+    (out_dir / "tracts.json").write_text(json.dumps(tracts_payload(df), separators=(",", ":"), allow_nan=False))
+    (out_dir / "summary.json").write_text(json.dumps(build_summary(df), indent=2, allow_nan=False))
+    print(f"dropped {df.attrs['n_input'] - len(df)} tracts without centroids")
     print(f"wrote {len(df):,} tracts -> {out_dir}")
 
 

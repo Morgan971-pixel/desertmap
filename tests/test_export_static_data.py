@@ -8,7 +8,6 @@ import export_static_data as ex
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FAIR = json.loads((ROOT / "outputs" / "fairness_metrics.json").read_text())
-ATLAS_PRESENT = ex.ATLAS.exists()
 
 
 @pytest.fixture(scope="module")
@@ -17,7 +16,7 @@ def tracts():
 
 
 def test_load_tracts_keeps_almost_all_rows_and_has_coords(tracts):
-    assert 72_000 < len(tracts) <= 72_531
+    assert len(tracts) == 72_506
     assert tracts["LATITUDE"].notna().all()
     assert tracts["LONGITUDE"].notna().all()
 
@@ -38,11 +37,23 @@ def test_probabilities_and_labels_in_range(tracts):
     assert set(p["pred"]) <= {0, 1} and set(p["actual"]) <= {0, 1}
 
 
-@pytest.mark.skipif(not ATLAS_PRESENT, reason="raw USDA atlas not on disk")
 def test_race_shares_are_uncapped(tracts):
     p = ex.tracts_payload(tracts)
     assert max(v for v in p["black"] if v is not None) > 90   # capped model input maxes at 35.4
     assert max(v for v in p["black"] if v is not None) <= 100
+
+
+def test_race_shares_align_with_model_inputs_where_uncapped(tracts):
+    # pct_nhblack10 = TractBlack / pop * 100, then IQR-capped; below the cap the two must agree.
+    below = tracts[tracts["pct_nhblack10"] < tracts["pct_nhblack10"].max()]
+    close = ((below["share_black"] - below["pct_nhblack10"]).abs() <= 0.5).mean()
+    assert len(below) > 50_000
+    assert close >= 0.99
+
+
+def test_missing_atlas_raises(tmp_path):
+    with pytest.raises(FileNotFoundError, match="atlas"):
+        ex.load_tracts(atlas=tmp_path / "nope.csv")
 
 
 def test_holc_ratio_matches_notebook():
@@ -71,4 +82,8 @@ def test_written_tracts_file_is_small(tmp_path):
     ex.main(out_dir=tmp_path)
     size_mb = (tmp_path / "tracts.json").stat().st_size / 1e6
     assert size_mb < 8
-    assert (tmp_path / "summary.json").exists()
+    json.loads((tmp_path / "tracts.json").read_text())
+    summary = json.loads((tmp_path / "summary.json").read_text())
+    assert set(summary) == {"n_tracts", "n_mapped", "food_desert_share", "holc",
+                            "global_shap", "metrics", "fairness"}
+    assert "fpr_disparity_q4_q1" in summary["fairness"]
