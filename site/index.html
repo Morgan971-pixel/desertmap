@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DesertMap</title>
+  <meta name="description" content="A Random Forest predicts USDA food deserts across U.S. census tracts, and an audit shows it reproduces 1930s redlining maps it never saw.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DesertMap">
+  <meta property="og:description" content="A Random Forest predicts USDA food deserts across U.S. census tracts, and an audit shows it reproduces 1930s redlining maps it never saw.">
+  <meta property="og:image" content="og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%230d1117'/%3E%3Ccircle%20cx='32'%20cy='32'%20r='16'%20fill='%23f97316'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>document.documentElement.classList.add('js');</script>
+  <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script defer src="https://unpkg.com/deck.gl@9.0.38/dist.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="hero">
+    <div class="container">
+      <p class="hero-eyebrow">AI4ALL Ignite · DesertMap · Machine learning and fairness audit</p>
+      <h1 class="hero-headline">19 million Americans<br>live in food deserts</h1>
+      <p class="hero-sub">We trained a model to predict which neighborhoods are food deserts. It learned the map of 1930s redlining without ever seeing it.</p>
+      <div class="hero-pills">
+        <div class="hero-pill reveal-scale d1">
+          <strong><span data-bind="n_tracts" class="counter">…</span></strong>
+          <span class="pill-text">census tracts analyzed</span>
+        </div>
+        <div class="hero-pill reveal-scale d2">
+          <strong><span data-bind="food_desert_share" class="counter">…</span></strong>
+          <span class="pill-text">are USDA food deserts</span>
+        </div>
+        <div class="hero-pill hero-pill-red reveal-scale d3">
+          <strong><span data-bind="holc.ratio" class="counter">…</span>x</strong>
+          <span class="pill-text">more likely to be flagged in redlined areas</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <section class="section" id="context" aria-labelledby="context-heading">
+      <div class="container">
+        <p class="sec-label reveal-up">Context</p>
+        <h2 class="reveal-up" id="context-heading">What is a food desert?</h2>
+        <div class="grid grid-3-2">
+          <div>
+            <div class="card card-orange reveal-up">
+              <p class="card-label">The USDA definition</p>
+              <p>A census tract where residents have <strong>low income</strong> and <strong>low access to a grocery store</strong>: the nearest supermarket is more than 1 mile away in an urban area, or more than 10 miles in a rural one.</p>
+            </div>
+            <p class="prose">Food deserts are linked to higher rates of obesity, type 2 diabetes and cardiovascular disease. They aren't random; they cluster in communities that faced decades of disinvestment and discrimination.</p>
+            <p class="prose">We trained a model to predict which tracts qualify, then audited it for racial bias four independent ways.</p>
+          </div>
+          <div>
+            <div class="card stat-card reveal-scale d1">
+              <span class="stat-num">19M</span>
+              <span class="stat-text">Americans live in food deserts, about 1 in 17</span>
+            </div>
+            <div class="card stat-card reveal-scale d2">
+              <span class="stat-num"><span data-bind="n_tracts">…</span></span>
+              <span class="stat-text">census tracts, covering the whole U.S.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="model" aria-labelledby="model-heading">
+      <div class="container">
+        <p class="sec-label reveal-up">The model</p>
+        <h2 class="reveal-up" id="model-heading">What we built</h2>
+        <p class="prose lead">We trained a <strong>Random Forest</strong> classifier on the <strong>USDA Food Access Research Atlas 2019</strong>, which covers every census tract in the U.S.</p>
+        <div class="grid grid-2">
+          <div>
+            <div class="card card-blue reveal-left">
+              <p class="card-label">The 9 features</p>
+              <div class="chips">
+                <span class="chip">Median Family Income</span>
+                <span class="chip">Poverty Rate</span>
+                <span class="chip">% Black Population</span>
+                <span class="chip">% Hispanic Population</span>
+                <span class="chip">% White Population</span>
+                <span class="chip">% No Vehicle</span>
+                <span class="chip">% SNAP Enrolled</span>
+                <span class="chip">Population (2010)</span>
+                <span class="chip">Urban / Rural</span>
+              </div>
+              <p class="card-note">No redlining data, ZIP codes or neighborhood names. The model sees only modern socioeconomic and demographic statistics.</p>
+            </div>
+          </div>
+          <div>
+            <div class="card reveal-right d1">
+              <h3 class="card-label">Random Forest</h3>
+              <p>200 decision trees each vote on “food desert or not,” and the majority wins. It handles non-linear patterns and shrugs off outliers.</p>
+            </div>
+            <div class="card reveal-right d2">
+              <h3 class="card-label">SHAP</h3>
+              <p>SHAP (SHapley Additive exPlanations) scores how hard each feature pushed each prediction: how far did poverty rate move this tract toward “food desert”? That makes every prediction auditable, tract by tract.</p>
+            </div>
+            <div class="card reveal-right d3">
+              <h3 class="card-label">80/20 train/test split</h3>
+              <p>58,024 tracts trained the model. The other 14,507 stayed hidden until testing, so scores on them show how it does on data it has never seen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="results" aria-labelledby="results-heading">
+      <div class="container">
+        <p class="sec-label reveal-up">Results</p>
+        <h2 class="reveal-up" id="results-heading">Model performance</h2>
+        <div class="grid grid-5-4">
+          <div>
+            <p class="prose">The Random Forest beats a logistic regression baseline on all four metrics. <strong>F1</strong> balances precision (not crying wolf) against recall (not missing real food deserts), which makes it the number to watch with a 5:1 class imbalance.</p>
+            <div class="table-wrap reveal-up">
+              <table class="perf-table">
+                <caption class="visually-hidden">Test-set scores for both models</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Model</th>
+                    <th scope="col">F1</th>
+                    <th scope="col">Precision</th>
+                    <th scope="col">Recall</th>
+                    <th scope="col">ROC-AUC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">Logistic Regression</th>
+                    <td><span data-bind="metrics.logistic_regression.f1">…</span></td>
+                    <td><span data-bind="metrics.logistic_regression.precision">…</span></td>
+                    <td><span data-bind="metrics.logistic_regression.recall">…</span></td>
+                    <td><span data-bind="metrics.logistic_regression.roc_auc">…</span></td>
+                  </tr>
+                  <tr class="highlight-row">
+                    <th scope="row">Random Forest <span class="win-badge">Best</span></th>
+                    <td><span data-bind="metrics.random_forest.f1">…</span></td>
+                    <td><span data-bind="metrics.random_forest.precision">…</span></td>
+                    <td><span data-bind="metrics.random_forest.recall">…</span></td>
+                    <td><span data-bind="metrics.random_forest.roc_auc">…</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3 class="card-label">What drives predictions overall?</h3>
+            <p class="note">Total SHAP importance across all <span data-bind="n_tracts">…</span> tracts. Longer bar, stronger driver.</p>
+            <div id="chart-global-shap" class="chart-slot" role="img" aria-label="Bar chart of total SHAP importance per feature"></div>
+            <p class="note">Median family income and poverty rate dominate, but <strong class="accent">racial composition features make the top five</strong>, carrying signal that income and poverty don't explain.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="explore" aria-labelledby="explore-heading">
+      <div class="container">
+        <p class="sec-label reveal-up">Explore</p>
+        <h2 class="reveal-up" id="explore-heading">Explore the map</h2>
+        <p class="prose">Each dot is one of <span data-bind="n_mapped">…</span> census tracts, colored from <span class="lo">blue</span> (low predicted probability) to <span class="hi">red</span> (high).</p>
+        <div class="controls">
+          <div class="control">
+            <label for="view-select">Show</label>
+            <select id="view-select">
+              <option value="all">All tracts</option>
+              <option value="predicted">Predicted food deserts</option>
+              <option value="tp">True positives (correctly flagged)</option>
+              <option value="fp">False positives (incorrectly flagged)</option>
+            </select>
+          </div>
+          <div class="control control-range">
+            <label for="min-prob">Minimum probability</label>
+            <div class="range-row">
+              <input type="range" id="min-prob" min="0.11" max="0.89" step="0.01" value="0.11">
+              <output id="min-prob-readout" for="min-prob">p &gt;= 0.11</output>
+            </div>
+          </div>
+        </div>
+        <p id="tract-count" class="tract-count" aria-live="polite"></p>
+        <div class="map-wrap">
+          <div id="map" class="map" aria-label="Map of census tracts"></div>
+          <div id="map-status" class="map-status skeleton" role="status"><span>Loading <span data-bind="n_mapped">…</span> tracts</span></div>
+        </div>
+        <div id="tract-detail" class="detail-panel" aria-live="polite">
+          <p id="tract-hint" class="detail-hint">Tap or click a dot to see why the model decided.</p>
+          <div id="tract-body" class="detail-grid" hidden>
+            <div class="detail-info">
+              <h3 id="tract-heading" class="detail-tract-id"></h3>
+              <div id="tract-tags" class="detail-tags"></div>
+              <table class="detail-table">
+                <tbody>
+                  <tr><th scope="row">Prediction probability</th><td id="tract-prob" class="accent"></td></tr>
+                  <tr><th scope="row">% Black residents</th><td id="tract-black"></td></tr>
+                  <tr><th scope="row">% Hispanic residents</th><td id="tract-hisp"></td></tr>
+                  <tr><th scope="row">% White residents</th><td id="tract-white"></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="detail-why">
+              <h3 class="card-label">Why did the model predict this?</h3>
+              <p class="note"><span class="hi">Red bars</span> push toward “food desert,” <span class="lo">blue bars</span> push away. Longer bars mean more influence.</p>
+              <div id="chart-tract-shap" class="chart-slot chart-small"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="finding" aria-labelledby="finding-heading">
+      <div class="container">
+        <p class="sec-label reveal-up">The finding</p>
+        <h2 class="reveal-up" id="finding-heading">The model remembered something it was never shown</h2>
+        <blockquote class="pull-quote reveal-left">AI trained on present data inherits past policy. An audit catches it. Deployment without one doesn't.</blockquote>
+        <p class="prose">Between 1935 and 1940, the federal Home Owners' Loan Corporation (HOLC) graded neighborhoods in more than 200 U.S. cities. <strong>Grade A (“Best”)</strong> went to mostly white, affluent areas. <strong class="red">Grade D (“Hazardous”)</strong> went almost entirely to Black and immigrant neighborhoods, which then lost access to mortgages and investment for decades.</p>
+        <p class="prose">Those grades shaped where grocery stores opened, where roads went and which communities got public money. Our model trained on <em>modern</em> data and never saw a single HOLC grade. Then we laid its predictions over the 1930s maps.</p>
+        <div class="bias-grid">
+          <article class="bcard reveal-up d1">
+            <h3 class="bcard-title">Redlining disparity</h3>
+            <p class="bcard-num bcard-orange"><span data-bind="holc.ratio" class="counter">…</span>x</p>
+            <p class="bcard-desc">Tracts graded C or D are <span data-bind="holc.ratio">…</span>x more likely to be predicted food deserts than tracts graded A or B (<span data-bind="holc.cd_rate">…</span> vs <span data-bind="holc.ab_rate">…</span>).</p>
+          </article>
+          <article class="bcard reveal-up d2">
+            <h3 class="bcard-title">Unequal mistakes</h3>
+            <p class="bcard-num bcard-red"><span data-bind="fairness.fpr_disparity_q4_q1" class="counter">…</span>x</p>
+            <p class="bcard-desc">The model wrongly flags tracts with the most Black residents at <span data-bind="fairness.fpr_disparity_q4_q1">…</span>x the rate of tracts with the fewest. (False positive rate, top vs bottom quartile.)</p>
+          </article>
+          <article class="bcard reveal-up d3">
+            <h3 class="bcard-title">Change race, change the answer</h3>
+            <p class="bcard-num bcard-red"><span data-bind="fairness.counterfactual_flip_rate" class="counter">…</span></p>
+            <p class="bcard-desc">Reset racial composition to the national median, hold everything else fixed, and <span data-bind="fairness.counterfactual_flip_rate">…</span> of food desert predictions flip to “not a food desert.” (Counterfactual probe.)</p>
+          </article>
+          <article class="bcard reveal-up d4">
+            <h3 class="bcard-title">Race carries its own signal</h3>
+            <p class="bcard-num bcard-orange">-<span data-bind="fairness.f1_delta_pts" class="counter">…</span> pts</p>
+            <p class="bcard-desc">Dropping % Black and % Hispanic cuts F1 by <span data-bind="fairness.f1_delta_pts">…</span> points (<span data-bind="fairness.f1_full">…</span> to <span data-bind="fairness.f1_race_removed">…</span>), so race predicts beyond income and poverty. (F1 ablation.)</p>
+          </article>
+        </div>
+        <div id="chart-holc" class="chart-slot reveal-up" role="img" aria-label="Bar chart of predicted food desert rate by HOLC grade"></div>
+      </div>
+    </section>
+
+    <section class="section" id="impact" aria-labelledby="impact-heading">
+      <div class="container">
+        <p class="sec-label reveal-up">Impact</p>
+        <h2 class="reveal-up" id="impact-heading">What auditing changes</h2>
+        <p class="prose">An F1 of <span data-bind="metrics.random_forest.f1">…</span> looks fine in aggregate. The audit shows what that number hides: the errors aren't random, and the communities that most need an accurate answer get the wrong one most often.</p>
+        <div class="grid grid-2">
+          <div class="card card-red reveal-left">
+            <h3 class="card-label red">Without auditing</h3>
+            <ul>
+              <li>The <span data-bind="fairness.fpr_disparity_q4_q1">…</span>x false positive gap stays invisible</li>
+              <li>Nobody sees the HOLC pattern</li>
+              <li>Racial composition steers predictions unnoticed</li>
+              <li>Deployment turns historical discrimination into policy</li>
+            </ul>
+          </div>
+          <div class="card card-green reveal-right">
+            <h3 class="card-label green">With auditing</h3>
+            <ul>
+              <li>The <span data-bind="fairness.fpr_disparity_q4_q1">…</span>x false positive gap is found and documented</li>
+              <li>C and D tracts are <span data-bind="holc.ratio">…</span>x more likely to be flagged than A and B tracts</li>
+              <li>SHAP explains every single prediction</li>
+              <li>Mitigations identified: equalized-odds calibration, adversarial debiasing</li>
+              <li>The model becomes evidence of the problem instead of fuel for it</li>
+            </ul>
+          </div>
+        </div>
+        <details class="disclosure">
+          <summary>Methodology</summary>
+          <dl>
+            <dt>Data</dt>
+            <dd>USDA Food Access Research Atlas 2019: <span data-bind="n_tracts">…</span> census tracts, national scope.</dd>
+            <dt>Target</dt>
+            <dd><code>LILATracts_1And10</code>, the federal food desert definition: low income and low access at 1 mile (urban) or 10 miles (rural).</dd>
+            <dt>Split</dt>
+            <dd>80% training (58,024 tracts), 20% holdout (14,507 tracts), stratified by target, random seed 42.</dd>
+            <dt>Model</dt>
+            <dd>Random Forest: 200 trees, max depth 20, class-balanced weights for the 5:1 imbalance.</dd>
+            <dt>SHAP</dt>
+            <dd>TreeExplainer on a representative 2,000-tract subsample of the test set, with <code>check_additivity=False</code> for speed.</dd>
+            <dt>HOLC crosswalk</dt>
+            <dd>Mapping Inequality v3 (Nelson et al., 2023), spatially joined to 2010 tract boundaries. Used only to group predictions afterwards, never as a training feature.</dd>
+            <dt>Fairness audit</dt>
+            <dd>(1) race-removed model delta, (2) false positive rates by quartile, (3) counterfactual racial composition probe, (4) HOLC overlay after prediction.</dd>
+          </dl>
+        </details>
+        <details class="disclosure">
+          <summary>Limitations</summary>
+          <h3>The confounding objection</h3>
+          <p>Redlined areas became low-income areas, and low-income areas have poor food access. So the HOLC overlap might reflect income, not race.</p>
+          <p>The counterfactual test checks exactly that. For every test-set tract we reset racial composition to the national median and held income, poverty rate and every other feature fixed. <strong><span data-bind="fairness.counterfactual_flip_rate">…</span> of predictions changed.</strong> If the pattern were only income geography, removing race shouldn't move individual predictions.</p>
+          <p>Calling it “just income geography” doesn't escape the point either. You would still need to explain why that geography lines up with 90-year-old federal grading maps, and that explanation is the redlining story.</p>
+          <h3>What we can and can't claim</h3>
+          <p>This is observational work; it doesn't establish causation. What it shows: the pattern holds across four independent tests, racial composition carries signal beyond income and poverty, and that is reason enough to audit before any deployment that affects food access. Responsible deployment doesn't need the causal question settled. It needs the disparity disclosed.</p>
+        </details>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>DesertMap · AI4ALL Ignite Accelerator · 2026 · <a href="https://github.com/Morgan971-pixel/desertmap" target="_blank" rel="noopener">GitHub</a></p>
+      <p>Data: USDA ERS Food Access Research Atlas 2019 · Mapping Inequality v3 (Nelson et al., 2023)</p>
+    </div>
+  </footer>
+</body>
+</html>
