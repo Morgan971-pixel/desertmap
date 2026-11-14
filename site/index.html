@@ -8,19 +8,22 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="DesertMap">
   <meta property="og:description" content="A Random Forest predicts USDA food deserts across U.S. census tracts, and an audit shows it reproduces 1930s redlining maps it never saw.">
-  <meta property="og:image" content="og.png">
+  <!-- Public URL: confirm at deploy (og:url, og:image, canonical) -->
+  <link rel="canonical" href="https://desertmap.vercel.app/">
+  <meta property="og:url" content="https://desertmap.vercel.app/">
+  <meta property="og:image" content="https://desertmap.vercel.app/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#0d1117">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%230d1117'/%3E%3Ccircle%20cx='32'%20cy='32'%20r='16'%20fill='%23f97316'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap">
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
   <link rel="stylesheet" href="styles.css">
-  <script>document.documentElement.classList.add('js');</script>
-  <script defer src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script defer src="https://unpkg.com/deck.gl@9.0.38/dist.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+  <script>
+    document.documentElement.classList.add('js');
+    // Failsafe: if main.js never starts the reveal, show all content anyway.
+    window.__dmRevealFailsafe = setTimeout(function () { document.documentElement.classList.remove('js'); }, 4000);
+  </script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
@@ -48,7 +51,7 @@
     </div>
   </header>
 
-  <main id="main">
+  <main id="main" tabindex="-1">
 
     <section class="section" id="context" aria-labelledby="context-heading">
       <div class="container">
@@ -159,7 +162,7 @@
           <div>
             <h3 class="card-label">What drives predictions overall?</h3>
             <p class="note">Total SHAP importance across all <span data-bind="n_tracts">…</span> tracts. Longer bar, stronger driver.</p>
-            <div id="chart-global-shap" class="chart-slot" role="img" aria-label="Bar chart of total SHAP importance per feature"></div>
+            <div id="chart-global-shap" class="chart-slot" data-chart-label="Bar chart of total SHAP importance per feature"></div>
             <p class="note">Median family income and poverty rate dominate, but <strong class="accent">racial composition features make the top five</strong>, carrying signal that income and poverty don't explain.</p>
           </div>
         </div>
@@ -170,7 +173,7 @@
       <div class="container">
         <p class="sec-label reveal-up">Explore</p>
         <h2 class="reveal-up" id="explore-heading">Explore the map</h2>
-        <p class="prose">Each dot is one of <span data-bind="n_mapped">…</span> census tracts, colored from <span class="lo">blue</span> (low predicted probability) to <span class="hi">red</span> (high).</p>
+        <p class="prose">Each dot is one of <span data-bind="n_mapped">…</span> census tracts, colored from <span class="lo">blue</span> (low predicted probability) to <span class="hi">red</span> (high). Every finding on this page also appears in the charts and tables.</p>
         <div class="controls">
           <div class="control">
             <label for="view-select">Show</label>
@@ -185,21 +188,23 @@
             <label for="min-prob">Minimum probability</label>
             <div class="range-row">
               <input type="range" id="min-prob" min="0.11" max="0.89" step="0.01" value="0.11">
-              <output id="min-prob-readout" for="min-prob">p &gt;= 0.11</output>
+              <output id="min-prob-readout" for="min-prob" aria-live="off">p ≥ 0.11</output>
             </div>
           </div>
         </div>
         <p id="tract-count" class="tract-count" aria-live="polite"></p>
         <div class="map-wrap">
-          <div id="map" class="map" aria-label="Map of census tracts"></div>
-          <div id="map-status" class="map-status skeleton" role="status"><span>Loading <span data-bind="n_mapped">…</span> tracts</span></div>
+          <div id="map" class="map" role="region" aria-label="Map of census tracts"></div>
+          <div id="map-status" class="map-status" role="status"><span>Map loads as you scroll</span></div>
         </div>
-        <div id="tract-detail" class="detail-panel" aria-live="polite">
-          <p id="tract-hint" class="detail-hint">Tap or click a dot to see why the model decided.</p>
+        <div id="tract-detail" class="detail-panel">
+          <div id="tract-summary" class="detail-summary" aria-live="polite" aria-atomic="true">
+            <p id="tract-hint" class="detail-hint">Tap or click a dot to see why the model decided.</p>
+            <h3 id="tract-heading" class="detail-tract-id" hidden></h3>
+            <div id="tract-tags" class="detail-tags" hidden></div>
+          </div>
           <div id="tract-body" class="detail-grid" hidden>
             <div class="detail-info">
-              <h3 id="tract-heading" class="detail-tract-id"></h3>
-              <div id="tract-tags" class="detail-tags"></div>
               <table class="detail-table">
                 <tbody>
                   <tr><th scope="row">Prediction probability</th><td id="tract-prob" class="accent"></td></tr>
@@ -212,7 +217,7 @@
             <div class="detail-why">
               <h3 class="card-label">Why did the model predict this?</h3>
               <p class="note"><span class="hi">Red bars</span> push toward “food desert,” <span class="lo">blue bars</span> push away. Longer bars mean more influence.</p>
-              <div id="chart-tract-shap" class="chart-slot chart-small"></div>
+              <div id="chart-tract-shap" class="chart-slot chart-small" data-chart-label="Bar chart of the three features that most moved this tract's prediction"></div>
             </div>
           </div>
         </div>
@@ -248,7 +253,7 @@
             <p class="bcard-desc">Dropping % Black and % Hispanic cuts F1 by <span data-bind="fairness.f1_delta_pts">…</span> points (<span data-bind="fairness.f1_full">…</span> to <span data-bind="fairness.f1_race_removed">…</span>), so race predicts beyond income and poverty. (F1 ablation.)</p>
           </article>
         </div>
-        <div id="chart-holc" class="chart-slot reveal-up" role="img" aria-label="Bar chart of predicted food desert rate by HOLC grade"></div>
+        <div id="chart-holc" class="chart-slot reveal-up" data-chart-label="Bar chart of predicted food desert rate by HOLC grade"></div>
       </div>
     </section>
 

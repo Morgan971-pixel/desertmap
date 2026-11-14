@@ -93,6 +93,8 @@ export function initReveal(root = document) {
       continue;
     }
     el.dataset.finalText = el.textContent;
+    // Lock the final rendered width so the count-up does not shift nearby text.
+    el.style.minWidth = el.getBoundingClientRect().width + 'px';
     el.textContent = format(0, el);
     counterObserver.observe(el);
   }

@@ -1,8 +1,87 @@
 // Page controller: binds summary numbers, starts reveal, loads charts and map lazily.
+// CDN libraries load on demand so text and numbers paint before any of them.
 import { VIEWS, tractId, fmtPct } from './model.js';
 import { initReveal } from './reveal.js';
 
+const CDN = {
+  plotly: 'https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js',
+  maplibreCss: 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css',
+  maplibre: 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js',
+  deck: 'https://unpkg.com/deck.gl@9.0.38/dist.min.js',
+};
+
+const TRACT_ARRAYS = [
+  'id', 'lat', 'lon', 'p', 'pred', 'actual', 'black', 'hisp', 'white',
+  'f1', 's1', 'f2', 's2', 'f3', 's3',
+];
+
 const $ = (id) => document.getElementById(id);
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- External assets (deduped by URL, failures not cached) ----------
+
+const assetCache = new Map();
+
+function loadAsset(url, create) {
+  if (!assetCache.has(url)) {
+    const promise = new Promise((resolve, reject) => {
+      const el = create();
+      el.addEventListener('load', () => resolve());
+      el.addEventListener('error', () => {
+        el.remove();
+        assetCache.delete(url);
+        reject(new Error('Failed to load ' + url));
+      });
+      document.head.appendChild(el);
+    });
+    assetCache.set(url, promise);
+  }
+  return assetCache.get(url);
+}
+
+function loadScript(url) {
+  return loadAsset(url, () => {
+    const s = document.createElement('script');
+    s.src = url;
+    s.async = true;
+    return s;
+  });
+}
+
+function loadCss(url) {
+  return loadAsset(url, () => {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = url;
+    return l;
+  });
+}
+
+// A failed dynamic import can stay cached by the browser, so retries bust the URL.
+const importAttempts = new Map();
+
+function importFresh(path) {
+  const n = importAttempts.get(path) || 0;
+  importAttempts.set(path, n + 1);
+  return import(n === 0 ? path : `${path}?retry=${n}`);
+}
+
+function whenNear(el, fn, margin = '400px 0px') {
+  if (!el) return;
+  if (typeof IntersectionObserver === 'undefined') {
+    fn();
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    if (entries.some((e) => e.isIntersecting)) {
+      io.disconnect();
+      fn();
+    }
+  }, { rootMargin: margin });
+  io.observe(el);
+}
+
+// ---------- Summary binding ----------
 
 function get(obj, path) {
   if (obj == null || typeof path !== 'string') return undefined;
@@ -79,6 +158,8 @@ async function loadSummary() {
   return res.json();
 }
 
+// ---------- Slots and charts ----------
+
 function slotMessage(el, text, retryFn) {
   if (!el) return;
   el.replaceChildren();
@@ -102,15 +183,42 @@ let chartsPromise = null;
 
 function loadCharts() {
   if (!chartsPromise) {
-    chartsPromise = import('./charts.js').catch((e) => {
-      console.warn('charts.js unavailable:', e.message);
+    chartsPromise = (async () => {
+      await loadScript(CDN.plotly);
+      return importFresh('./charts.js');
+    })().catch((e) => {
+      console.warn('charts unavailable:', e);
+      chartsPromise = null; // allow a later retry
       return null;
     });
   }
   return chartsPromise;
 }
 
-async function renderSummaryCharts(summary) {
+// Renders into a fresh inner element; role="img" is added only after success,
+// so a failure message in the slot stays readable text.
+async function renderChart(slot, render, retryFn) {
+  if (!slot) return;
+  const charts = await loadCharts();
+  if (!charts) {
+    slotMessage(slot, 'Chart unavailable.', retryFn);
+    return;
+  }
+  slot.replaceChildren();
+  const inner = document.createElement('div');
+  inner.className = 'chart-inner';
+  slot.appendChild(inner);
+  try {
+    await render(charts, inner);
+    inner.setAttribute('role', 'img');
+    if (slot.dataset.chartLabel) inner.setAttribute('aria-label', slot.dataset.chartLabel);
+  } catch (e) {
+    console.warn('chart render failed:', e);
+    slotMessage(slot, 'Chart unavailable.', retryFn);
+  }
+}
+
+function setupLazyCharts(summary) {
   const shapEl = $('chart-global-shap');
   const holcEl = $('chart-holc');
   if (!summary) {
@@ -118,36 +226,26 @@ async function renderSummaryCharts(summary) {
     slotMessage(holcEl, 'Chart unavailable.');
     return;
   }
-  const charts = await loadCharts();
-  if (!charts) {
-    slotMessage(shapEl, 'Chart unavailable.');
-    slotMessage(holcEl, 'Chart unavailable.');
-    return;
-  }
-  try {
-    await charts.renderGlobalShap(shapEl, summary.global_shap);
-  } catch (e) {
-    console.warn(e);
-    slotMessage(shapEl, 'Chart unavailable.');
-  }
-  try {
-    await charts.renderHolc(holcEl, summary.holc);
-  } catch (e) {
-    console.warn(e);
-    slotMessage(holcEl, 'Chart unavailable.');
-  }
+  const drawShap = () =>
+    renderChart(shapEl, (c, el) => c.renderGlobalShap(el, summary.global_shap), drawShap);
+  const drawHolc = () =>
+    renderChart(holcEl, (c, el) => c.renderHolc(el, summary.holc), drawHolc);
+  whenNear(shapEl, drawShap);
+  whenNear(holcEl, drawHolc);
 }
 
+// ---------- Filters ----------
+
+let summaryData = null;
 let tracts = null;
 let controller = null;
 let loading = false;
 let selectToken = 0;
 const state = { view: 'all', minProb: 0.11 };
-let statusTemplate = '';
 
 function renderReadout() {
   const out = $('min-prob-readout');
-  const t = 'p >= ' + state.minProb.toFixed(2);
+  const t = 'p ≥ ' + state.minProb.toFixed(2);
   out.textContent = t;
   out.value = t;
 }
@@ -157,6 +255,7 @@ function applyFilter() {
   const n = controller.setFilter(state.view, state.minProb);
   $('tract-count').textContent =
     `Showing ${Number(n).toLocaleString('en-US')} of ${tracts.n.toLocaleString('en-US')} tracts`;
+  onSelect(null); // never show a tract the filter just hid
 }
 
 function debounce(fn, ms) {
@@ -189,6 +288,8 @@ function wireFilters() {
   });
 }
 
+// ---------- Tract detail ----------
+
 function makeTag(cls, text) {
   const span = document.createElement('span');
   span.className = 'tag ' + cls;
@@ -202,17 +303,19 @@ function labelTag(v) {
     : makeTag('tag-ok', 'Not a food desert');
 }
 
+function showTract(visible) {
+  $('tract-hint').hidden = visible;
+  $('tract-heading').hidden = !visible;
+  $('tract-tags').hidden = !visible;
+  $('tract-body').hidden = !visible;
+}
+
 async function onSelect(i) {
   const token = ++selectToken;
-  const hint = $('tract-hint');
-  const body = $('tract-body');
   if (i == null || !tracts || i < 0 || i >= tracts.n) {
-    body.hidden = true;
-    hint.hidden = false;
+    showTract(false);
     return;
   }
-  hint.hidden = true;
-  body.hidden = false;
   $('tract-heading').textContent = 'Census tract ' + tractId(tracts.id[i]);
   const actual = tracts.actual[i];
   const pred = tracts.pred[i];
@@ -231,66 +334,92 @@ async function onSelect(i) {
   $('tract-black').textContent = fmtPct(tracts.black[i]);
   $('tract-hisp').textContent = fmtPct(tracts.hisp[i]);
   $('tract-white').textContent = fmtPct(tracts.white[i]);
+  showTract(true);
+  $('tract-detail').scrollIntoView({
+    block: 'nearest',
+    behavior: reducedMotion() ? 'auto' : 'smooth',
+  });
+
   const entries = [1, 2, 3]
     .map((k) => ({
       label: tracts.labels[tracts['f' + k][i]] ?? 'Unknown',
       value: tracts['s' + k][i],
     }))
     .filter((e) => Number.isFinite(e.value));
-  const el = $('chart-tract-shap');
-  const charts = await loadCharts();
+  const slot = $('chart-tract-shap');
+  slot.replaceChildren();
+  await loadCharts();
   if (token !== selectToken) return; // a newer selection superseded this one
-  if (!charts) {
-    slotMessage(el, 'Chart unavailable.');
-    return;
+  await renderChart(slot, (c, el) => c.renderTractShap(el, entries));
+}
+
+// ---------- Map ----------
+
+function validateTracts(t) {
+  if (!t || typeof t !== 'object') throw new Error('tracts.json is not an object');
+  if (!Number.isInteger(t.n) || t.n <= 0) throw new Error('tracts.json: bad n');
+  if (!Array.isArray(t.labels)) throw new Error('tracts.json: missing labels');
+  for (const key of TRACT_ARRAYS) {
+    if (!Array.isArray(t[key]) || t[key].length !== t.n) {
+      throw new Error(`tracts.json: ${key} missing or length != n`);
+    }
   }
-  try {
-    await charts.renderTractShap(el, entries);
-  } catch (e) {
-    console.warn(e);
-    slotMessage(el, 'Chart unavailable.');
-  }
+  return t;
 }
 
 async function fetchTracts() {
   const res = await fetch('data/tracts.json');
   if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
+  return validateTracts(await res.json());
+}
+
+async function loadMapLibs() {
+  await Promise.all([
+    loadCss(CDN.maplibreCss),
+    loadScript(CDN.maplibre).then(() => loadScript(CDN.deck)),
+  ]);
+}
+
+function showMapLoading(status) {
+  const n = summaryData && Number.isFinite(summaryData.n_mapped)
+    ? summaryData.n_mapped.toLocaleString('en-US') + ' '
+    : '';
+  const span = document.createElement('span');
+  span.textContent = `Loading ${n}tracts`;
+  status.replaceChildren(span);
+  status.hidden = false;
+  status.classList.add('skeleton');
 }
 
 async function loadMap() {
   if (loading || controller) return;
   loading = true;
   const status = $('map-status');
-  status.hidden = false;
-  status.classList.add('skeleton');
-  status.innerHTML = statusTemplate; // static markup captured from index.html
+  const mapEl = $('map');
+  const fail = (text, err) => {
+    console.warn(text, err);
+    status.classList.remove('skeleton');
+    status.hidden = false;
+    slotMessage(status, text, () => loadMap());
+  };
+  showMapLoading(status);
   try {
-    const [modRes, dataRes] = await Promise.allSettled([
-      import('./map.js'),
-      fetchTracts(),
+    const [libRes, modRes, dataRes] = await Promise.allSettled([
+      loadMapLibs(),
+      importFresh('./map.js'),
+      tracts ? Promise.resolve(tracts) : fetchTracts(),
     ]);
-    if (modRes.status === 'rejected') {
-      console.warn('map.js unavailable:', modRes.reason?.message);
-      status.classList.remove('skeleton');
-      slotMessage(status, 'Map unavailable.');
-      return;
-    }
-    if (dataRes.status === 'rejected') {
-      console.warn('tracts.json failed:', dataRes.reason?.message);
-      status.classList.remove('skeleton');
-      slotMessage(status, 'Could not load tract data.', () => loadMap());
-      return;
-    }
+    if (modRes.status === 'rejected') return fail('Map unavailable.', modRes.reason);
+    if (libRes.status === 'rejected') return fail('Map unavailable.', libRes.reason);
+    if (dataRes.status === 'rejected') return fail('Could not load tract data.', dataRes.reason);
     tracts = dataRes.value;
+    mapEl.replaceChildren(); // retry-safe: clear anything a failed attempt left behind
     try {
-      controller = await modRes.value.initMap($('map'), tracts, onSelect);
+      controller = await modRes.value.initMap(mapEl, tracts, onSelect);
     } catch (e) {
-      console.warn('initMap failed:', e);
       controller = null;
-      status.classList.remove('skeleton');
-      slotMessage(status, 'Map unavailable.');
-      return;
+      mapEl.replaceChildren();
+      return fail('Map unavailable.', e);
     }
     status.hidden = true;
     status.classList.remove('skeleton');
@@ -300,40 +429,25 @@ async function loadMap() {
   }
 }
 
-function setupLazyMap() {
-  const mapEl = $('map');
-  if (!mapEl) return;
-  statusTemplate = $('map-status').innerHTML;
-  if (typeof IntersectionObserver === 'undefined') {
-    loadMap();
-    return;
-  }
-  const io = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((e) => e.isIntersecting)) {
-        io.disconnect();
-        loadMap();
-      }
-    },
-    { rootMargin: '400px 0px' }
-  );
-  io.observe(mapEl);
-}
+// ---------- Boot ----------
 
 async function main() {
-  wireFilters();
-  let summary = null;
   try {
-    summary = await loadSummary();
-    bindAll(summary);
-  } catch (e) {
-    console.warn('summary.json unavailable:', e.message);
-    markAllUnavailable();
+    wireFilters();
+    whenNear($('map'), loadMap); // before the summary fetch, so a hung summary cannot block it
+    try {
+      summaryData = await loadSummary();
+      bindAll(summaryData);
+    } catch (e) {
+      console.warn('summary.json unavailable:', e);
+      summaryData = null;
+      markAllUnavailable();
+    }
+    setupLazyCharts(summaryData);
   } finally {
     initReveal(document);
+    clearTimeout(window.__dmRevealFailsafe);
   }
-  setupLazyMap();
-  await renderSummaryCharts(summary);
 }
 
 main().catch((e) => console.error('DesertMap boot error:', e));

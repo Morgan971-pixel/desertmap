@@ -16,7 +16,8 @@
   --blue: #3b82f6;
   --green: #22c55e;
   --lo: #31a0d0;
-  --hi: #d62728;
+  --hi: #d62728;      /* map color ramp only */
+  --hi-text: #f87171; /* red for text: passes AA on --bg and --surface */
   --radius: 12px;
   --gutter: 16px;
   --maxw: 1200px;
@@ -70,6 +71,8 @@ img, svg { max-width: 100%; }
   text-decoration: none;
   z-index: 1000;
 }
+
+main:focus { outline: none; }
 
 .container {
   max-width: var(--maxw);
@@ -129,10 +132,10 @@ button:focus-visible {
 .hero-pill {
   background: rgba(22,27,34,.85);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 1.75rem;
   padding: .6rem 1.4rem;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: .5rem;
   max-width: 100%;
 }
@@ -150,11 +153,20 @@ button:focus-visible {
 .pill-text {
   color: var(--muted);
   font-size: .9rem;
+  line-height: 1.3;
   text-align: left;
 }
 
+@media (max-width: 479px) {
+  .hero-pill {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* Sections and type */
-.section { padding: 3rem 0; }
+/* clip (not hidden): sideways reveal offsets must not widen the page on phones */
+.section { padding: 3rem 0; overflow-x: clip; }
 
 .section + .section { border-top: 1px solid var(--surface-2); }
 
@@ -235,7 +247,7 @@ h3 { font-size: 1rem; }
 
 .card-note {
   font-size: .85rem;
-  color: var(--faint);
+  color: var(--muted);
   margin-top: 1.1rem;
 }
 
@@ -341,7 +353,7 @@ h3 { font-size: 1rem; }
 .red { color: var(--red); }
 .green { color: var(--green); }
 .lo { color: var(--lo); font-weight: 600; }
-.hi { color: var(--hi); font-weight: 600; }
+.hi { color: var(--hi-text); font-weight: 600; }
 
 /* Chart slots */
 .chart-slot {
@@ -351,6 +363,11 @@ h3 { font-size: 1rem; }
 }
 
 .chart-small { min-height: 190px; }
+
+.chart-inner {
+  width: 100%;
+  min-height: inherit;
+}
 
 #chart-holc {
   margin-top: 2rem;
@@ -498,6 +515,8 @@ output#min-prob-readout {
   padding: 1.25rem;
   margin-top: 1.25rem;
 }
+
+.detail-summary .detail-tags { margin-bottom: 1rem; }
 
 .detail-hint {
   color: var(--muted);
@@ -743,6 +762,7 @@ code {
 .counter {
   display: inline-block;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 /* Wider viewports */
@@ -767,6 +787,14 @@ code {
   .container { padding-inline: 2rem; }
   .bias-grid { grid-template-columns: repeat(4, 1fr); }
   .bcard-num { font-size: 3rem; }
+}
+
+/* Print: never hide content behind reveal state */
+@media print {
+  .js [class*="reveal-"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* Reduced motion */
