@@ -94,7 +94,8 @@ export function initReveal(root = document) {
     }
     el.dataset.finalText = el.textContent;
     // Lock the final rendered width so the count-up does not shift nearby text.
-    el.style.minWidth = el.getBoundingClientRect().width + 'px';
+    // offsetWidth is layout width, unaffected by reveal transforms (scale).
+    el.style.minWidth = el.offsetWidth + 'px';
     el.textContent = format(0, el);
     counterObserver.observe(el);
   }

@@ -214,6 +214,8 @@ async function renderChart(slot, render, retryFn) {
     if (slot.dataset.chartLabel) inner.setAttribute('aria-label', slot.dataset.chartLabel);
   } catch (e) {
     console.warn('chart render failed:', e);
+    // A newer render may have replaced this inner element; never overwrite it.
+    if (inner.parentNode !== slot) return;
     slotMessage(slot, 'Chart unavailable.', retryFn);
   }
 }
