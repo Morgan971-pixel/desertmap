@@ -24,7 +24,7 @@ SUMMARY = ROOT / "site" / "data" / "summary.json"
 INK = "#1f2937"
 MUTED = "#6b7280"
 GRID = "#e5e7eb"
-ORANGE = "#f97316"
+TEAL = "#0f766e"
 GRADE_COLORS = {"A": "#22c55e", "B": "#3b82f6", "C": "#f59e0b", "D": "#ef4444"}
 GRADE_NAMES = {"A": "Best", "B": "Still desirable", "C": "Declining", "D": "Hazardous"}
 FIG_WIDTH = 3.3  # inches; one column of the card is about 3.5 in
@@ -140,7 +140,7 @@ def holc_chart(s: dict) -> None:
         ax.text((lo + hi) / 2, y + 0.5, f"{name} pooled: {pct(rate)}%",
                 ha="center", va="bottom", fontsize=7.5, color=INK)
     ax.text(-0.42, 41.5, f"C+D rate is {holc['ratio']:.2f}× the A+B rate",
-            ha="left", va="top", fontsize=8.5, fontweight="bold", color="#c2410c")
+            ha="left", va="top", fontsize=8.5, fontweight="bold", color="#115e59")
 
     ax.set_xticks(range(4))
     ax.set_xticklabels([f"{g}  {GRADE_NAMES[g]}\nn = {holc['counts'][g]:,}"
@@ -161,7 +161,7 @@ def shap_chart(s: dict) -> None:
     shares = [r["total"] / total * 100 for r in rows]
     labels = [r["label"] for r in rows]
     fig, ax = plt.subplots(figsize=(FIG_WIDTH, 2.5))
-    ax.barh(range(len(rows)), shares, height=0.66, color=ORANGE)
+    ax.barh(range(len(rows)), shares, height=0.66, color=TEAL)
     for i, v in enumerate(shares):
         ax.text(v + 0.8, i, f"{v:.1f}%", va="center", fontsize=7, color=INK)
     ax.set_yticks(range(len(rows)))

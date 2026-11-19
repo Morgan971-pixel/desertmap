@@ -22,10 +22,10 @@
 \usepackage{fancyhdr}
 \usepackage{hyperref}
 
-% Colors: site orange, darkened for text on white; red for risk.
-\definecolor{accent}{HTML}{F97316}
-\definecolor{accentdark}{HTML}{C2410C}
-\definecolor{accentwash}{HTML}{FFF7ED}
+% Colors: deep teal accent, darker teal for text on white; red for risk.
+\definecolor{accent}{HTML}{0F766E}
+\definecolor{accentdark}{HTML}{115E59}
+\definecolor{accentwash}{HTML}{F0FDFA}
 \definecolor{risk}{HTML}{DC2626}
 \definecolor{riskwash}{HTML}{FEF2F2}
 \definecolor{ink}{HTML}{1F2937}
@@ -35,7 +35,7 @@
 
 \hypersetup{
   colorlinks=true, linkcolor=accentdark, urlcolor=accentdark,
-  pdftitle={DesertMap Model Card}, pdfauthor={Morgan},
+  pdftitle={DesertMap Model Card}, pdfauthor={Morgan Anunda},
   pdfsubject={Model card for the DesertMap food-desert classifier and its fairness audit},
   pdfkeywords={model card, fairness audit, food deserts, HOLC, redlining, random forest, SHAP}}
 
@@ -68,7 +68,7 @@
   colframe=accent, colback=accentwash, left=10pt, right=10pt, top=6pt, bottom=6pt]
 {\headfont\fontsize{21}{24}\selectfont DesertMap Model Card}\par\vspace{2pt}
 {\fontsize{11.5}{14}\selectfont A Random Forest food-desert classifier for \NTracts{} US census tracts, with a four-part fairness audit.}\par\vspace{4pt}
-{\small\raggedright\color{muted}\textbf{Version} November 2026 \quad\textbullet\quad \textbf{Author} Morgan, AI4ALL Ignite Accelerator\\ \href{https://github.com/Morgan971-pixel/desertmap}{github.com/Morgan971-pixel/desertmap} \quad\textbullet\quad \href{https://desertmap.vercel.app}{desertmap.vercel.app}\par}
+{\small\raggedright\color{muted}\textbf{Version} November 2026 \quad\textbullet\quad \textbf{Author} Morgan Anunda\\ \href{https://github.com/Morgan971-pixel/desertmap}{github.com/Morgan971-pixel/desertmap} \quad\textbullet\quad \href{https://desertmap.vercel.app}{desertmap.vercel.app}\par}
 \end{tcolorbox}
 
 \vspace{1pt}
@@ -131,7 +131,7 @@ Logistic regression & \LrFOneCell & \LrPrecCell & \LrRecCell & \LrAucCell \\
 \bottomrule
 \end{tabular}\par}
 \vspace{3pt}
-{\footnotesize\color{muted}Bold orange marks the better model on each metric. Metrics are from the original June 2026 run; a re-run under scikit-learn 1.9 picks the same settings and scores F1 0.533.}
+{\footnotesize\color{muted}Bold teal marks the better model on each metric. Test-set metrics from the November 2026 re-run (scikit-learn 1.9).}
 
 The forest leads on F1, precision and ROC-AUC. The baseline finds more true food deserts (recall \LrRec) but raises far more false alarms (precision \LrPrec).
 
