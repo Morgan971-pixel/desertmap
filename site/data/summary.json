@@ -86,9 +86,9 @@
   },
   "fairness": {
     "f1_full": 0.5327264846120503,
-    "f1_race_removed": 0.4950533462657614,
-    "f1_delta_pts": 3.7673138346288884,
-    "counterfactual_flip_rate": 0.21960072595281308,
+    "f1_race_removed": 0.48589695374200825,
+    "f1_delta_pts": 4.682953087004204,
+    "counterfactual_flip_rate": 0.16406533575317606,
     "fpr_q1": 0.06853967273849954,
     "fpr_q4": 0.23752635277582573,
     "fpr_disparity_q4_q1": 3.4655308857698177

@@ -139,12 +139,12 @@ The forest leads on F1, precision and ROC-AUC. The baseline finds more true food
 \section*{Fairness audit}
 Four checks, each built to test a different route by which race could enter the predictions.
 \begin{enumerate}
-  \item \lbl{F1 ablation} Refitting without \% Black and \% Hispanic drops F1 from \FairFOne{} to \FairFOneNoRace{} (\FairDeltaPts{} points). Race shares carry signal that income and poverty do not replace.
+  \item \lbl{F1 ablation} Refitting without the three race shares drops F1 from \FairFOne{} to \FairFOneNoRace{} (\FairDeltaPts{} points). Race shares carry signal that income and poverty do not replace.
   \item \lbl{Quartile FPR} Across quartiles of \% Black, the top quartile's false positive rate is \textbf{\FprDisparity\texttimes{}} the bottom one's.
-  \item \lbl{Counterfactual probe} Setting \% Black and \% Hispanic to their held-out median, all else fixed, flips \textbf{\FlipRate} of held-out food-desert predictions to ``not a food desert''.
+  \item \lbl{Counterfactual probe} Setting all three race shares to their held-out median, all else fixed, flips \textbf{\FlipRate} of held-out food-desert predictions to ``not a food desert''.
   \item \lbl{HOLC overlay} C- and D-graded tracts are predicted food deserts at \textbf{\HolcRatio\texttimes{}} the A+B rate. This is a ratio of rates (\CdRate{} over \AbRate); the rate climbs with every grade from A to D. Held-out tracts alone give \HolcRatioTest\texttimes; true labels give \HolcLabelRatio\texttimes.
 \end{enumerate}
-{\footnotesize\color{muted} All four checks use the tuned model above. Checks 1 to 3 use the held-out test set; check 4 covers all \NTracts{} tracts, training tracts included.}
+{\footnotesize\color{muted} All four checks use the tuned model above. Checks 1 and 3 remove or reset \% Black, \% Hispanic and \% White together, since the shares sum to nearly 100\% and any one reveals the others. Checks 1 to 3 use the held-out test set; check 4 covers all \NTracts{} tracts, training tracts included.}
 
 % ==== subgroups
 \section*{Subgroups examined}
@@ -161,7 +161,7 @@ We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. 
 \includegraphics[width=\linewidth]{fig_shap.pdf}
 \captionof{figure}{Each feature's share of summed absolute SHAP values, counted over every tract's top three drivers (\NMapped{} mapped tracts).}
 \end{center}
-A longer bar means the feature moved more predictions further; the chart shows size of influence and leaves out direction. Income and poverty dominate (\ShapIncomeShare{} and \ShapPovertyShare). The three race shares add up to \ShapRaceShare, with \% Hispanic in sixth place. Rank understates effect: the counterfactual probe still flips one in five positive predictions.
+A longer bar means the feature moved more predictions further; the chart shows size of influence and leaves out direction. Income and poverty dominate (\ShapIncomeShare{} and \ShapPovertyShare). The three race shares add up to \ShapRaceShare, with \% Hispanic in sixth place. Rank understates effect: the counterfactual probe still flips one in six positive predictions.
 
 SHAP values exist for every tract, and the website shows each tract's three strongest drivers so a reviewer can check any single prediction. Values come from path-dependent TreeSHAP and add up to each tract's predicted probability.
 
@@ -172,7 +172,7 @@ SHAP values exist for every tract, and the website shows each tract's three stro
 {\headfont\fontsize{10.5}{12}\selectfont\color{risk}LIMITATIONS AND RISKS}\par\vspace{2pt}
 \begin{itemize}
   \item \lbl{Observational} The audit shows association. It cannot say that redlining caused today's food deserts, or that race causes the model's errors.
-  \item \lbl{Race as input} \% Black, \% Hispanic and \% White are model inputs. We kept them so the audit could measure their effect; any deployment must justify that choice or drop them (removing \% Black and \% Hispanic alone cost \FairDeltaPts{} F1 points; \% White was not tested).
+  \item \lbl{Race as input} \% Black, \% Hispanic and \% White are model inputs. We kept them so the audit could measure their effect; any deployment must justify that choice or drop them (removing all three cost \FairDeltaPts{} F1 points).
   \item \lbl{Capped features} IQR capping means model inputs differ from raw census shares in extreme tracts.
   \item \lbl{Dated geography} 2019 data on 2010 tract boundaries. The HOLC overlay covers only surveyed cities, mostly older Northern and Midwestern ones.
   \item \lbl{Imbalance} About \ImbalanceRatio{} negatives per food desert. At precision \RfPrec, most flagged tracts are false alarms.

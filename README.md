@@ -72,7 +72,7 @@ Four methods, all on the same tuned model. All four point the same way.
 
 ### 1. Race-Removed Model Delta
 
-Retraining the model with % Black and % Hispanic removed reduces F1 by **3.8 points** (0.533 to 0.495). Racial features carry predictive signal beyond income and poverty rate.
+Retraining the model with all three race shares removed (% Black, % Hispanic, % White) reduces F1 by **4.7 points** (0.533 to 0.486). All three are removed together because the three race shares sum to nearly 100%, so any one left in reveals the others; removing only % Black and % Hispanic costs 3.8 points. Racial features carry predictive signal beyond income and poverty rate.
 
 ### 2. Quartile False Positive Rate Analysis
 
@@ -82,7 +82,7 @@ Census tracts were grouped into quartiles by Black population share. The false p
 
 ### 3. Counterfactual Racial Composition Probe
 
-For each of the 2,755 held-out tracts predicted as food deserts, % Black and % Hispanic were set to their held-out median with every other feature fixed. **22.0% of those predictions flipped** to "not a food desert." Race alone decides about one in five positive predictions.
+For each of the 2,755 held-out tracts predicted as food deserts, all three race shares were set to their held-out median with every other feature fixed. **16.4% of those predictions flipped** to "not a food desert" (452 of 2,755). Race alone decides about one in six positive predictions. An earlier version reset only % Black and % Hispanic and flipped 22.0%, but it left many tracts with race shares that no longer added up.
 
 ### 4. HOLC Post-Prediction Overlay
 
@@ -96,7 +96,7 @@ The HOLC crosswalk (Mapping Inequality v3, Nelson et al. 2023) maps 1930s neighb
 
 **The confounding variable challenge:** Redlined areas became low-income areas; low-income areas have poor food access. The overlap with HOLC maps might simply reflect income concentration rather than race.
 
-The counterfactual test addresses this directly. % Black and % Hispanic were set to their held-out median while holding income, poverty rate, and all other features constant. 22.0% of positive predictions flipped. If the pattern were purely income geography, removing race should not move individual predictions. It does.
+The counterfactual test addresses this directly. All three race shares were set to their held-out median while holding income, poverty rate, and all other features constant. 16.4% of positive predictions flipped. If the pattern were purely income geography, removing race should not move individual predictions. It does.
 
 Even if the pattern is income geography, that geography aligns with 90-year-old federal grading maps, and the explanation for that match is the redlining story.
 

@@ -1,8 +1,8 @@
 {
   "full_model_f1": 0.5327264846120503,
   "full_model_roc_auc": 0.8850028146572446,
-  "race_removed_f1": 0.4950533462657614,
-  "f1_delta": 0.03767313834628888,
+  "race_removed_f1": 0.48589695374200825,
+  "f1_delta": 0.046829530870042047,
   "holc_cd_pred_rate": 0.20337559828700982,
   "holc_ab_pred_rate": 0.13297872340425532,
   "holc_rate_ratio": 1.5293844991183139,
@@ -16,7 +16,14 @@
   "fpr_q1": 0.06853967273849954,
   "fpr_q4": 0.23752635277582573,
   "fpr_disparity_q4_q1": 3.4655308857698177,
-  "counterfactual_flip_rate": 0.21960072595281308,
-  "counterfactual_flipped": 605,
-  "counterfactual_n_predicted": 2755
+  "counterfactual_flip_rate": 0.16406533575317606,
+  "counterfactual_flipped": 452,
+  "counterfactual_n_predicted": 2755,
+  "race_features": [
+    "pct_nhblack10",
+    "pct_hisp10",
+    "pct_nhwhite10"
+  ],
+  "race_removed_f1_black_hisp": 0.4950533462657614,
+  "counterfactual_flip_rate_black_hisp": 0.21960072595281308
 }

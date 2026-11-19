@@ -11,7 +11,7 @@
 
 The audit applies four complementary techniques to evaluate whether the model's predictions reproduce or amplify racial and historical disparities in food access. All four use the same fitted model, so they probe one set of predictions from several angles.
 
-1. **Race-removed model comparison**: retrain with percentage Black and Hispanic features excluded; measure performance delta
+1. **Race-removed model comparison**: retrain with all three race shares (percentage Black, Hispanic and White) excluded; measure performance delta
 2. **Quartile analysis**: stratify the test set by percentage Black (and separately by percentage Hispanic) into quartiles; compute precision, recall, and false positive rate per quartile
 3. **Counterfactual probe**: for tracts predicted food desert, perturb racial composition features to their median across held-out tracts and measure prediction change
 4. **HOLC post-prediction audit**: join model predictions to the Mapping Inequality HOLC crosswalk; compare food desert prediction rates across historical redlining grades A through D
@@ -24,12 +24,12 @@ The audit applies four complementary techniques to evaluate whether the model's 
 
 | Metric | Full Model | Race-Removed | Delta |
 |--------|-----------|--------------|-------|
-| F1 (food desert class) | 0.533 | 0.495 | -0.038 |
-| Precision | 0.446 | 0.387 | -0.059 |
-| Recall | 0.661 | 0.686 | +0.025 |
-| ROC-AUC | 0.885 | 0.868 | -0.017 |
+| F1 (food desert class) | 0.533 | 0.486 | -0.047 |
+| Precision | 0.446 | 0.374 | -0.073 |
+| Recall | 0.661 | 0.695 | +0.034 |
+| ROC-AUC | 0.885 | 0.861 | -0.024 |
 
-Removing percentage Black and percentage Hispanic from the feature set reduces F1 by 3.8 percentage points and ROC-AUC by 1.7 percentage points. The precision drop (-5.9 pp) is larger than the recall change (+2.5 pp): without racial composition features the model flags more tracts as food deserts, and a larger share of those flags are wrong. Racial composition features carry signal that median family income, poverty rate, vehicle access, and SNAP enrollment do not fully replace.
+All three race shares are removed together because the three race shares sum to nearly 100%, so any one left in reveals the others. Removing them reduces F1 by 4.7 percentage points and ROC-AUC by 2.4 percentage points (removing only percentage Black and Hispanic costs 3.8 F1 points). The precision drop (-7.3 pp) is larger than the recall change (+3.4 pp): without racial composition features the model flags more tracts as food deserts, and a larger share of those flags are wrong. Racial composition features carry signal that median family income, poverty rate, vehicle access, and SNAP enrollment do not fully replace.
 
 ---
 
@@ -63,14 +63,14 @@ The Hispanic quartile pattern is much flatter than the Black quartile pattern. T
 
 ## 4. Counterfactual Probe
 
-Starting from the 2,755 held-out tracts predicted as food deserts, percentage Black and percentage Hispanic were replaced with their median values across held-out tracts while all other features (income, poverty, vehicle access, SNAP, population, urban status) remained unchanged.
+Starting from the 2,755 held-out tracts predicted as food deserts, all three race shares (percentage Black, Hispanic and White) were replaced with their median values across held-out tracts while all other features (income, poverty, vehicle access, SNAP, population, urban status) remained unchanged.
 
 | | Count | Rate |
 |-|-------|------|
 | Food desert predictions | 2,755 | n/a |
-| Predictions that flip to non-food-desert | 605 | 22.0% |
+| Predictions that flip to non-food-desert | 452 | 16.4% |
 
-Holding all socioeconomic and geographic characteristics constant, changing racial composition alone reverses about one in five food desert predictions. The model's positive predictions depend on these two features even with income, poverty, and access features held fixed.
+Holding all socioeconomic and geographic characteristics constant, changing racial composition alone reverses about one in six food desert predictions. An earlier version reset only percentage Black and Hispanic and flipped 22.0% (605), but it left 29% of flagged tracts with race shares summing below 60%, so part of that effect came from impossible inputs. Resetting all three keeps each tract's makeup consistent.
 
 ---
 
@@ -99,7 +99,7 @@ HOLC grade was excluded from all training runs. The model learned from median fa
 
 ## Interpretation
 
-The four audit methods point the same way: the model's predictions skew by race. It produces more false positives in tracts with high Black population (3.47x higher false positive rate in Q4 vs Q1), shows racial composition dependency in about one in five positive predictions (22.0%), and spatially reproduces historical HOLC redlining grades it was never shown (1.53x predicted rate ratio, 1.30x on held-out tracts, against 1.82x in the true labels). All four checks use the same model.
+The four audit methods point the same way: the model's predictions skew by race. It produces more false positives in tracts with high Black population (3.47x higher false positive rate in Q4 vs Q1), shows racial composition dependency in about one in six positive predictions (16.4%), and spatially reproduces historical HOLC redlining grades it was never shown (1.53x predicted rate ratio, 1.30x on held-out tracts, against 1.82x in the true labels). All four checks use the same model.
 
 The model performs well at its stated task (ROC-AUC 0.885). The disparity shows that food insecurity in the United States is itself geographically patterned by historical policy, and a classifier trained on modern socioeconomic conditions will inherit that pattern. The audit finding is both a methodological concern (the model may be less accurate for protected demographic groups) and a substantive finding (present food access conditions spatially reproduce past discriminatory policy).
 

@@ -245,12 +245,12 @@
           <article class="bcard reveal-up d3">
             <h3 class="bcard-title">Change race, change the answer</h3>
             <p class="bcard-num bcard-red"><span data-bind="fairness.counterfactual_flip_rate" class="counter">…</span></p>
-            <p class="bcard-desc">Set % Black and % Hispanic to the held-out median, hold everything else fixed, and <span data-bind="fairness.counterfactual_flip_rate">…</span> of food desert predictions flip to “not a food desert.” (Counterfactual probe.)</p>
+            <p class="bcard-desc">Set all three race shares (% Black, % Hispanic, % White) to the held-out median, hold everything else fixed, and <span data-bind="fairness.counterfactual_flip_rate">…</span> of food desert predictions flip to “not a food desert.” (Counterfactual probe.)</p>
           </article>
           <article class="bcard reveal-up d4">
             <h3 class="bcard-title">Race carries its own signal</h3>
             <p class="bcard-num bcard-orange">-<span data-bind="fairness.f1_delta_pts" class="counter">…</span> pts</p>
-            <p class="bcard-desc">Dropping % Black and % Hispanic cuts F1 by <span data-bind="fairness.f1_delta_pts">…</span> points (<span data-bind="fairness.f1_full">…</span> to <span data-bind="fairness.f1_race_removed">…</span>), so race predicts beyond income and poverty. (F1 ablation.)</p>
+            <p class="bcard-desc">Dropping all three race shares cuts F1 by <span data-bind="fairness.f1_delta_pts">…</span> points (<span data-bind="fairness.f1_full">…</span> to <span data-bind="fairness.f1_race_removed">…</span>), so race predicts beyond income and poverty. (F1 ablation.)</p>
           </article>
         </div>
         <div id="chart-holc" class="chart-slot reveal-up" data-chart-label="Bar chart of predicted food desert rate by HOLC grade"></div>
@@ -307,7 +307,7 @@
           <summary>Limitations</summary>
           <h3>The confounding objection</h3>
           <p>Redlined areas became low-income areas, and low-income areas have poor food access. So the HOLC overlap might reflect income alone.</p>
-          <p>The counterfactual test checks exactly that. For every held-out tract the model flags as a food desert, we set % Black and % Hispanic to their held-out median and kept income, poverty rate and every other feature fixed. <strong><span data-bind="fairness.counterfactual_flip_rate">…</span> of those predictions flipped.</strong> If the pattern were only income geography, removing race shouldn't move individual predictions.</p>
+          <p>The counterfactual test checks exactly that. For every held-out tract the model flags as a food desert, we set all three race shares to their held-out median and kept income, poverty rate and every other feature fixed. <strong><span data-bind="fairness.counterfactual_flip_rate">…</span> of those predictions flipped.</strong> If the pattern were only income geography, removing race shouldn't move individual predictions.</p>
           <p>Even if the pattern is income geography, that geography lines up with 90-year-old federal grading maps, and the explanation for that match is the redlining story.</p>
           <h3>What we can and can't claim</h3>
           <p>This is observational work; it doesn't establish causation. What it shows: the pattern holds across four tests, racial composition carries signal beyond income and poverty, and that is reason enough to audit before any deployment that affects food access. Responsible deployment calls for disclosing the disparity, whether or not the causal question is settled.</p>
