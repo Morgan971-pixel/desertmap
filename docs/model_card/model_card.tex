@@ -1,0 +1,210 @@
+% DesertMap model card. Build from the repo root:
+%   uv run python docs/model_card/make_assets.py && tectonic docs/model_card/model_card.tex
+% Every data number comes from numbers.tex, generated from site/data/summary.json.
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[letterpaper,left=0.55in,right=0.55in,top=0.5in,bottom=0.62in,footskip=0.3in]{geometry}
+\usepackage{fontspec}
+\setmainfont{SourceSansPro}[
+  Extension=.otf, UprightFont=*-Regular, BoldFont=*-Semibold,
+  ItalicFont=*-RegularIt, BoldItalicFont=*-SemiboldIt]
+\newfontfamily\headfont{SourceSansPro}[Extension=.otf, UprightFont=*-Bold]
+\setmonofont{SourceCodePro}[Extension=.otf, UprightFont=*-Regular, Scale=0.9]
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage[skins]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+% Colors: site orange, darkened for text on white; red for risk.
+\definecolor{accent}{HTML}{F97316}
+\definecolor{accentdark}{HTML}{C2410C}
+\definecolor{accentwash}{HTML}{FFF7ED}
+\definecolor{risk}{HTML}{DC2626}
+\definecolor{riskwash}{HTML}{FEF2F2}
+\definecolor{ink}{HTML}{1F2937}
+\definecolor{muted}{HTML}{4B5563}
+\definecolor{rulegray}{HTML}{D1D5DB}
+\color{ink}
+
+\hypersetup{
+  colorlinks=true, linkcolor=accentdark, urlcolor=accentdark,
+  pdftitle={DesertMap Model Card}, pdfauthor={Morgan},
+  pdfsubject={Model card for the DesertMap food-desert classifier and its fairness audit},
+  pdfkeywords={model card, fairness audit, food deserts, HOLC, redlining, random forest, SHAP}}
+
+\newcommand{\best}[1]{\textbf{\color{accentdark}#1}}
+\input{numbers.tex}
+
+% Layout
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3.2pt}
+\setlength{\columnsep}{0.28in}
+\linespread{1.04}
+\frenchspacing
+\setlist{nosep, leftmargin=1.05em, topsep=1pt, itemsep=1.6pt}
+\setlist[enumerate]{leftmargin=1.25em}
+\titleformat{\section}{\headfont\fontsize{10.5}{12}\selectfont\color{rulegray}}{}{0pt}{\textcolor{accentdark}}[\vspace{1.5pt}\titlerule]
+\titlespacing*{\section}{0pt}{8pt}{1pt}
+\captionsetup{font={footnotesize,color=muted}, labelfont={bf,color=muted}, labelsep=period, skip=2pt, justification=raggedright, singlelinecheck=false}
+\newcommand{\lbl}[1]{\textbf{#1}\enspace}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{muted}DesertMap Model Card \textbullet{} November 2026}
+\fancyfoot[R]{\footnotesize\color{muted}Page \thepage{} of 2}
+
+\begin{document}
+
+% ==== header band
+\begin{tcolorbox}[enhanced, sharp corners, boxrule=0pt, toprule=3pt,
+  colframe=accent, colback=accentwash, left=10pt, right=10pt, top=6pt, bottom=6pt]
+{\headfont\fontsize{21}{24}\selectfont DesertMap Model Card}\par\vspace{2pt}
+{\fontsize{11.5}{14}\selectfont A Random Forest food-desert classifier for \NTracts{} US census tracts, with a four-part fairness audit.}\par\vspace{4pt}
+{\small\raggedright\color{muted}\textbf{Version} November 2026 \quad\textbullet\quad \textbf{Author} Morgan, AI4ALL Ignite Accelerator\\ \href{https://github.com/Morgan971-pixel/desertmap}{github.com/Morgan971-pixel/desertmap} \quad\textbullet\quad \href{https://desertmap.vercel.app}{desertmap.vercel.app}\par}
+\end{tcolorbox}
+
+\vspace{1pt}
+% ==== key finding
+\begin{tcolorbox}[enhanced, sharp corners, boxrule=0.8pt, colframe=accent, colback=white,
+  sidebyside, sidebyside align=center, lefthand width=1.25in, segmentation hidden,
+  left=8pt, right=10pt, top=5pt, bottom=5pt]
+\centering{\headfont\fontsize{34}{36}\selectfont\color{accentdark}\HolcRatio\texttimes{}}\par
+{\footnotesize\color{muted}\textbf{KEY FINDING}}
+\tcblower
+The model flags tracts in formerly redlined neighborhoods (HOLC grades C and D) as food deserts at \textbf{\HolcRatio{} times the rate} of A- and B-graded tracts: \CdRate{} against \AbRate. It never saw a HOLC grade; it rebuilt the 1930s map from present-day income, poverty and demographic data, so any use of its predictions inherits that history unless someone audits for it.
+\end{tcolorbox}
+
+\vspace{2pt}
+\raggedcolumns
+\begin{multicols}{2}
+
+% ==== model details
+\section*{Model details}
+\begin{itemize}
+  \item \lbl{Model} scikit-learn Random Forest: 200 trees, max depth 20, class-balanced weights. Baseline: logistic regression.
+  \item \lbl{Task} Binary classification of \texttt{LILATracts\_1And10}, the USDA flag for a tract that is low income and low access (over 1 mile from a supermarket if urban, over 10 miles if rural).
+  \item \lbl{Inputs (9)} Median family income; poverty rate; \% Black, \% Hispanic and \% White population; \% households with no vehicle; \% SNAP households; total population (2010); urban flag. No HOLC grades, ZIP codes or place names.
+  \item \lbl{Explanations} SHAP (TreeExplainer) scores how far each feature pushed each tract's prediction.
+\end{itemize}
+
+% ==== intended use
+\section*{Intended use}
+Research and teaching: a worked example of how a model trained on current data can inherit historical discrimination, and of the audit that catches it. Analysts can also use it to explore tract-level food access, reading each prediction beside its SHAP explanation and the audit below.
+
+\textbf{Out of scope}
+\begin{itemize}
+  \item Allocating funding, stores or services to individual tracts without a fresh audit and threshold calibration.
+  \item Causal claims. The model estimates neither what causes food deserts nor the effect of redlining.
+  \item Judging individual households; labels describe whole tracts.
+  \item Other countries, or years far from 2019, without retraining.
+\end{itemize}
+
+% ==== data
+\section*{Data}
+\begin{itemize}
+  \item \lbl{Source} USDA ERS Food Access Research Atlas 2019, all \NTracts{} tracts on 2010 census geography. \FoodDesertShare{} are food deserts.
+  \item \lbl{Split} 80/20, stratified on the label, seed 42: 58,024 training and 14,507 test tracts.
+  \item \lbl{Preparation} Shares derived from tract counts; continuous features capped at the 1.5\,\texttimes\,IQR fences.
+  \item \lbl{Audit only} HOLC crosswalk from Mapping Inequality v3 (Nelson et al., 2023), joined to 2010 tracts: \HolcN{} tracts graded A to D. We used it only to group finished predictions.
+\end{itemize}
+
+% ==== metrics
+\section*{Metrics}
+Held-out test set, food-desert class. F1 is the primary metric because positives are rare.
+
+\vspace{2pt}
+{\centering\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Model & F1 & Precision & Recall & ROC-AUC \\
+\midrule
+Random Forest & \RfFOneCell & \RfPrecCell & \RfRecCell & \RfAucCell \\
+Logistic regression & \LrFOneCell & \LrPrecCell & \LrRecCell & \LrAucCell \\
+\bottomrule
+\end{tabular}\par}
+\vspace{3pt}
+{\footnotesize\color{muted}Bold orange marks the better model on each metric.}
+
+The forest leads on F1, precision and ROC-AUC. The baseline finds more true food deserts (recall \LrRec) but raises far more false alarms (precision \LrPrec).
+
+% ==== fairness audit
+\section*{Fairness audit}
+Four checks, each built to test a different route by which race could enter the predictions.
+\begin{enumerate}
+  \item \lbl{F1 ablation} Refitting without \% Black and \% Hispanic drops F1 from \FairFOne{} to \FairFOneNoRace{} (\FairDeltaPts{} points). Race shares carry signal that income and poverty do not replace.
+  \item \lbl{Quartile FPR} Across quartiles of \% Black, the top quartile's false positive rate is \textbf{\FprDisparity\texttimes{}} the bottom one's.
+  \item \lbl{Counterfactual probe} Setting \% Black and \% Hispanic to the national median, all else fixed, flips \textbf{\FlipRate} of food-desert predictions to ``not a food desert''.
+  \item \lbl{HOLC overlay} C- and D-graded tracts are predicted food deserts at \textbf{\HolcRatio\texttimes{}} the A+B rate. This is a ratio of rates (\CdRate{} over \AbRate); the rate climbs with every grade from A to D.
+\end{enumerate}
+{\footnotesize\color{muted} Checks 1 to 3 use the audit notebook's refit of the forest (same setup), whose full-feature F1 is \FairFOne. Check 4 scores all \NTracts{} tracts, training tracts included.}
+
+% ==== subgroups
+\section*{Subgroups examined}
+We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. The Hispanic pattern differs from the Black one: false positives peak in the third quartile, and the most Hispanic quartile has the lowest recall, so there the model tends to miss real food deserts. The audit has no urban versus rural or regional breakdown yet, and rural tracts are where the Atlas data is thinnest.
+
+\begin{center}
+\includegraphics[width=\linewidth]{fig_holc.pdf}
+\captionof{figure}{Predicted food-desert rate by HOLC grade (\HolcN{} graded tracts). HOLC is the Home Owners' Loan Corporation, a federal agency that graded neighborhoods in over 200 cities between 1935 and 1940; grade D went almost entirely to Black and immigrant communities and shut them out of mortgage lending.}
+\end{center}
+
+% ==== global drivers
+\section*{Global drivers}
+\begin{center}
+\includegraphics[width=\linewidth]{fig_shap.pdf}
+\captionof{figure}{Each feature's share of summed absolute SHAP values, counted over every tract's top three drivers (\NMapped{} mapped tracts).}
+\end{center}
+A longer bar means the feature moved more predictions further; the chart shows size of influence and leaves out direction. Income and poverty dominate (\ShapIncomeShare{} and \ShapPovertyShare). The three race shares add up to \ShapRaceShare, with \% Hispanic in fifth place, and that small share still decides enough close calls to flip a third of positives in the counterfactual probe.
+
+SHAP values exist for every tract, and the website shows each tract's three strongest drivers so a reviewer can check any single prediction. The notebook's global summary plots use \mbox{TreeExplainer} on a 2,000-tract test subsample.
+
+\columnbreak
+% ==== limitations
+\begin{tcolorbox}[enhanced, sharp corners, boxrule=0pt, leftrule=3pt, colframe=risk, colback=riskwash,
+  left=7pt, right=7pt, top=4pt, bottom=5pt, before skip=8pt, after skip=4pt]
+{\headfont\fontsize{10.5}{12}\selectfont\color{risk}LIMITATIONS AND RISKS}\par\vspace{2pt}
+\begin{itemize}
+  \item \lbl{Observational} The audit shows association. It cannot say that redlining caused today's food deserts, or that race causes the model's errors.
+  \item \lbl{Race as input} \% Black, \% Hispanic and \% White are model inputs. We kept them so the audit could measure their effect; any deployment must justify that choice or drop them (cost: \FairDeltaPts{} F1 points).
+  \item \lbl{Capped features} IQR capping means model inputs differ from raw census shares in extreme tracts.
+  \item \lbl{Dated geography} 2019 data on 2010 tract boundaries. The HOLC overlay covers only surveyed cities, mostly older Northern and Midwestern ones.
+  \item \lbl{Imbalance} About \ImbalanceRatio{} negatives per food desert. At precision \RfPrec, most flagged tracts are false alarms.
+  \item \lbl{Proxy label} The USDA flag measures supermarket distance and income. It misses corner stores, markets, and time or transport barriers.
+\end{itemize}
+\end{tcolorbox}
+
+% ==== ethics
+\section*{Ethical considerations}
+Food-access labels steer grants and store siting. A biased model could send resources away from, or stigmatize, the neighborhoods redlining already harmed, so we publish the disparity with the model. Before any real use we recommend store-level distance data, per-quartile thresholds that equalize false positive rates (equalized odds), uncertainty reported with every prediction, and ongoing monitoring of false positive rates by quartile.
+
+% ==== reproduce
+\section*{Reproduce}
+{\raggedright Code, data pipeline and notebooks live at \href{https://github.com/Morgan971-pixel/desertmap}{github.com/\allowbreak Morgan971-pixel/\allowbreak desertmap}. Run \texttt{uv sync}, then notebooks 01 to 06 in order, then:\par}
+\vspace{1pt}
+{\footnotesize\ttfamily uv run python scripts/export\_static\_data.py\\
+uv run python docs/model\_card/make\_assets.py\\
+tectonic docs/model\_card/model\_card.tex}\par
+\vspace{2pt}
+{\footnotesize\color{muted}Format follows Mitchell et al., ``Model Cards for Model Reporting'' (FAT* 2019).}
+
+% ==== terms
+\section*{Terms}
+\begin{itemize}
+  \item \lbl{Census tract} A small, neighborhood-sized area the US Census Bureau uses for statistics.
+  \item \lbl{Precision} Of the tracts the model flags, the share that really are food deserts.
+  \item \lbl{Recall} Of the real food deserts, the share the model flags.
+  \item \lbl{F1} The harmonic mean of precision and recall, so a model cannot score well by trading one away.
+  \item \lbl{ROC-AUC} The chance the model ranks a random food desert above a random non-desert; 0.5 is a coin flip.
+  \item \lbl{False positive rate} The share of non-desert tracts the model wrongly flags.
+  \item \lbl{SHAP} Splits one prediction into per-feature contributions, using Shapley values from game theory.
+\end{itemize}
+
+\end{multicols}
+\end{document}
