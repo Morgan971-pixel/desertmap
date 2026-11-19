@@ -38,3 +38,9 @@ Thumbs.db
 # Outputs — committed selectively
 outputs/figures/.gitkeep
 scripts/commit.log
+
+# LaTeX model card: tectonic intermediates and the raw build output (copied to desertmap_model_card.pdf)
+docs/model_card/*.aux
+docs/model_card/*.log
+docs/model_card/*.out
+docs/model_card/model_card.pdf
