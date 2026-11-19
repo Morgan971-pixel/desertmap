@@ -1,0 +1,14 @@
+{
+  "test_f1": 0.5327264846120503,
+  "test_roc_auc": 0.8850028146572446,
+  "n_rows": 72531,
+  "prob_min": 0.0,
+  "prob_max": 0.9988311688311688,
+  "base_value": 0.4999722528608849,
+  "additivity_gap": 4.0962025438240346e-14,
+  "shap_seconds": 2638.1,
+  "jobs": 4,
+  "feature_perturbation": "tree_path_dependent",
+  "shap_version": "0.50.0",
+  "sklearn_version": "1.9.0"
+}
