@@ -40,6 +40,19 @@ function isFiniteNumber(v) {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+// Values that round to 0.000 at 3 dp carry no direction, so they get no sign.
+const SHAP_EPS = 0.0005;
+
+export function fmtShap(v) {
+  if (Math.abs(v) < SHAP_EPS) return '0.000';
+  return (v > 0 ? '+' : '-') + Math.abs(v).toFixed(3);
+}
+
+function shapColor(v) {
+  if (Math.abs(v) < SHAP_EPS) return '#8b949e';
+  return v > 0 ? '#ef4444' : '#3b82f6';
+}
+
 export function globalShapSpec(rows, { narrow = false } = {}) {
   if (!Array.isArray(rows) || rows.length === 0) {
     throw new Error('globalShapSpec: rows must be a non-empty array');
@@ -60,7 +73,8 @@ export function globalShapSpec(rows, { narrow = false } = {}) {
   }
   const labels = sorted.map((r) => (narrow ? wrapLabel(r.label, 16) : r.label));
   const colors = totals.map((t) => {
-    const a = Math.round((0.4 + (0.6 * t) / maxTotal) * 1000) / 1000;
+    // Floor of 0.55 keeps the faintest bar at 3:1 non-text contrast on the card.
+    const a = Math.round((0.55 + (0.45 * t) / maxTotal) * 1000) / 1000;
     return 'rgba(249,115,22,' + a + ')';
   });
   const data = [{
@@ -118,7 +132,8 @@ export function holcSpec(holc, { narrow = false } = {}) {
       throw new Error('holcSpec: ' + key + ' must be a finite number in [0, 1]');
     }
   }
-  const maxRate = Math.max(...rates);
+  // All-zero rates would give a [0, 0] axis; fall back to a 0-130% frame.
+  const maxRate = Math.max(...rates) || 1;
   const data = [{
     type: 'bar',
     x: grades,
@@ -188,17 +203,21 @@ export function tractShapSpec(entries, { narrow = false } = {}) {
   const range = allPos ? [-m * 0.05, m * 1.45]
     : allNeg ? [-m * 1.45, m * 0.05]
     : [-m * 1.45, m * 1.45];
+  // Numeric y positions with tick labels, so two entries with the same label
+  // stay two bars instead of merging into one category.
+  const positions = entries.map((_, i) => i);
   const data = [{
     type: 'bar',
     orientation: 'h',
     x: values,
-    y: labels,
-    marker: { color: values.map((v) => (v > 0 ? '#ef4444' : '#3b82f6')) },
-    text: values.map((v) => (v >= 0 ? '+' : '-') + Math.abs(v).toFixed(3)),
+    y: positions,
+    customdata: entries.map((e) => e.label),
+    marker: { color: values.map(shapColor) },
+    text: values.map(fmtShap),
     textposition: 'outside',
     textfont: { color: '#e6edf3', size: narrow ? 10 : 11 },
     cliponaxis: false,
-    hovertemplate: '%{y}: %{x:+.3f}<extra></extra>',
+    hovertemplate: '%{customdata}: %{text}<extra></extra>',
   }];
   const layout = {
     ...baseLayout(narrow),
@@ -215,8 +234,13 @@ export function tractShapSpec(entries, { narrow = false } = {}) {
     yaxis: {
       autorange: 'reversed',
       automargin: true,
+      tickmode: 'array',
+      tickvals: positions,
+      ticktext: labels,
       tickfont: { size: narrow ? 10 : 11, color: '#e6edf3' },
       fixedrange: true,
+      zeroline: false,
+      showgrid: false,
     },
     bargap: 0.35,
     shapes: [{ type: 'line', xref: 'x', yref: 'paper', x0: 0, x1: 0, y0: 0, y1: 1, line: { color: '#484f58', width: 1 } }],

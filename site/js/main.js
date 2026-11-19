@@ -160,9 +160,28 @@ async function loadSummary() {
 
 // ---------- Slots and charts ----------
 
+// Plotly's responsive mode attaches a window resize listener per chart that
+// only Plotly.purge removes, so a chart dropped by replaceChildren would leak.
+function purgeCharts(el) {
+  const Plotly = window.Plotly;
+  if (!el || !Plotly || typeof Plotly.purge !== 'function') return;
+  el.querySelectorAll('.chart-inner').forEach((chart) => {
+    try {
+      Plotly.purge(chart);
+    } catch (e) {
+      console.warn('chart purge failed:', e); // never block the next render
+    }
+  });
+}
+
+function clearSlot(el) {
+  purgeCharts(el);
+  el.replaceChildren();
+}
+
 function slotMessage(el, text, retryFn) {
   if (!el) return;
-  el.replaceChildren();
+  clearSlot(el);
   const wrap = document.createElement('div');
   wrap.className = 'slot-msg';
   const span = document.createElement('span');
@@ -196,22 +215,24 @@ function loadCharts() {
 }
 
 // Renders into a fresh inner element; role="img" is added only after success,
-// so a failure message in the slot stays readable text.
-async function renderChart(slot, render, retryFn) {
+// so a failure message in the slot stays readable text. `label` overrides the
+// slot's static data-chart-label.
+async function renderChart(slot, render, retryFn, label) {
   if (!slot) return;
   const charts = await loadCharts();
   if (!charts) {
     slotMessage(slot, 'Chart unavailable.', retryFn);
     return;
   }
-  slot.replaceChildren();
+  clearSlot(slot);
   const inner = document.createElement('div');
   inner.className = 'chart-inner';
   slot.appendChild(inner);
   try {
     await render(charts, inner);
     inner.setAttribute('role', 'img');
-    if (slot.dataset.chartLabel) inner.setAttribute('aria-label', slot.dataset.chartLabel);
+    const ariaLabel = label || slot.dataset.chartLabel;
+    if (ariaLabel) inner.setAttribute('aria-label', ariaLabel);
   } catch (e) {
     console.warn('chart render failed:', e);
     // A newer render may have replaced this inner element; never overwrite it.
@@ -349,10 +370,14 @@ async function onSelect(i) {
     }))
     .filter((e) => Number.isFinite(e.value));
   const slot = $('chart-tract-shap');
-  slot.replaceChildren();
-  await loadCharts();
+  clearSlot(slot);
+  const charts = await loadCharts();
   if (token !== selectToken) return; // a newer selection superseded this one
-  await renderChart(slot, (c, el) => c.renderTractShap(el, entries));
+  const label = charts
+    ? `SHAP drivers for tract ${tractId(tracts.id[i])}: ` +
+      entries.map((e) => `${e.label} ${charts.fmtShap(e.value)}`).join(', ')
+    : undefined;
+  await renderChart(slot, (c, el) => c.renderTractShap(el, entries), undefined, label);
 }
 
 // ---------- Map ----------
