@@ -476,7 +476,8 @@ output#min-prob-readout {
   background: var(--surface);
 }
 
-.map {
+/* Two classes so maplibre-gl.css (injected later) cannot reset this to relative. */
+.map-wrap > .map {
   position: absolute;
   inset: 0;
 }
