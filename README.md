@@ -40,7 +40,7 @@ No HOLC redlining data, ZIP codes, or neighborhood names were used in training.
 | Logistic Regression (baseline) | 0.438 | 0.302 | 0.800 | 0.838 |
 | **Random Forest** | **0.525** | **0.416** | **0.710** | **0.886** |
 
-F1 is the primary metric given the 5:1 class imbalance. The Random Forest improves F1 by 8.7 points over baseline while maintaining a 0.886 ROC-AUC.
+F1 is the primary metric given the roughly 7:1 class imbalance. The Random Forest improves F1 by 8.7 points over baseline while maintaining a 0.886 ROC-AUC.
 
 ![ROC and PR curves](outputs/figures/03_roc_pr_curves.png)
 
@@ -98,24 +98,37 @@ The HOLC crosswalk (Mapping Inequality v3, Nelson et al. 2023) maps 1930s neighb
 
 The counterfactual test addresses this directly. Racial composition features were reset to the national median while holding income, poverty rate, and all other features constant. 33.6% of predictions changed. If the pattern were purely income geography, removing race should not move individual predictions. It does.
 
-The causal chain argument does not escape this. "It is just income geography" requires explaining why that income geography aligns with 90-year-old federal grading maps — which is the redlining story, not an alternative to it.
+Even if the pattern is income geography, that geography aligns with 90-year-old federal grading maps, and the explanation for that match is the redlining story.
 
-**What this study can and cannot claim:** This is observational. Causation is not established. The finding is that (1) the pattern exists across four independent tests, (2) racial composition carries independent predictive signal beyond income and poverty, and (3) that is sufficient reason to audit the model before any deployment affecting food access decisions. Responsible use does not require resolving the causation question. It requires disclosing the disparity.
+**What this study can and cannot claim:** This is observational. Causation is not established. The finding is that (1) the pattern exists across four independent tests, (2) racial composition carries independent predictive signal beyond income and poverty, and (3) that is sufficient reason to audit the model before any deployment affecting food access decisions. Responsible use calls for disclosing the disparity, whether or not the causation question is settled.
 
 ---
 
-## Interactive App
+## Interactive Site
 
-The Streamlit app loads pre-computed predictions for all 72,531 tracts and allows tract-level exploration with SHAP explanations.
+A static web app shows predictions for all 72,531 tracts, with tract-level SHAP explanations. The two-page [model card](docs/model_card/desertmap_model_card.pdf) summarizes the model, data, metrics and limits.
 
 ![DesertMap interactive map — 72,531 U.S. census tracts colored by predicted food desert probability](outputs/figures/app_map_preview.png)
 
-**Live demo:** [desertmap.streamlit.app](https://desertmap.streamlit.app)
+**Live site:** [desertmap.vercel.app](https://desertmap.vercel.app)
+
+Run it locally:
 
 ```bash
 uv sync
-uv run streamlit run app/streamlit_app.py
+uv run python scripts/export_static_data.py
+cd site && python3 -m http.server 8000
 ```
+
+Then open http://localhost:8000. Rebuild the model card (needs `brew install tectonic`):
+
+```bash
+uv run python docs/model_card/make_assets.py && tectonic docs/model_card/model_card.tex
+```
+
+Then copy `docs/model_card/model_card.pdf` to `docs/model_card/desertmap_model_card.pdf` and `site/model-card.pdf`.
+
+Tests: `npm test` (site JavaScript) and `uv run pytest tests -q` (export and data checks).
 
 ---
 
@@ -153,9 +166,17 @@ desertmap/
 │   ├── 04_random_forest.ipynb
 │   ├── 05_fairness_audit.ipynb
 │   └── 06_xai.ipynb
-├── app/
-│   └── streamlit_app.py
+├── site/
+│   ├── index.html
+│   ├── styles.css
+│   ├── js/
+│   ├── data/
+│   └── model-card.pdf
+├── scripts/
+│   └── export_static_data.py
+├── tests/
 ├── docs/
+│   ├── model_card/
 │   ├── proposal.md
 │   ├── smart_goals.md
 │   ├── bias_identification.md

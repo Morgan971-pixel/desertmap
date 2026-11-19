@@ -106,7 +106,7 @@ Left — Without responsible development:
 
 Right — With responsible development:
 - 5.9x FPR disparity surfaced and documented
-- HOLC odds ratio of 1.57x measured and reported
+- HOLC rate ratio of 1.57x measured and reported
 - Mitigation strategies: equalized odds threshold calibration, adversarial debiasing
 - Model becomes evidence — not an accelerant — of the problem
 
