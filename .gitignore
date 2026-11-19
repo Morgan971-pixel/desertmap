@@ -48,3 +48,4 @@ docs/model_card/model_card.pdf
 # Vercel CLI link
 .vercel
 site/.vercel
+logs/

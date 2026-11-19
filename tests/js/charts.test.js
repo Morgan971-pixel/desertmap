@@ -80,7 +80,8 @@ test("global SHAP: narrow mode wraps long labels with <br>", () => {
 test("global SHAP: text format and axis", () => {
   const { data, layout, config } = globalShapSpec(summary.global_shap);
   const trace = data[0];
-  assert.ok(trace.text.includes("62.9k"));
+  const top = Math.max(...summary.global_shap.map((d) => d.total));
+  assert.ok(trace.text.includes(`${(top / 1000).toFixed(1)}k`));
   assert.equal(trace.textposition, "outside");
   const title = layout.xaxis.title.text ?? layout.xaxis.title;
   assert.equal(title, "Cumulative |SHAP| across all tracts");
@@ -103,7 +104,7 @@ test("HOLC: grades, colors, rates and text", () => {
   assert.deepEqual(trace.marker.color, ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444"]);
   const r = summary.holc.rates;
   assert.deepEqual(trace.y, [r.A * 100, r.B * 100, r.C * 100, r.D * 100]);
-  assert.deepEqual(trace.text, ["10.8%", "18.0%", "24.2%", "27.4%"]);
+  assert.deepEqual(trace.text, ["A", "B", "C", "D"].map((g) => `${(r[g] * 100).toFixed(1)}%`));
   assert.equal(trace.textposition, "outside");
 });
 
@@ -128,8 +129,12 @@ test("HOLC: all-zero rates still give a usable y range", () => {
 test("HOLC: annotation uses pooled cd_rate/ab_rate exactly", () => {
   const { layout } = holcSpec(summary.holc);
   assert.equal(layout.annotations.length, 1);
-  assert.equal(layout.annotations[0].text, "<b>C+D tracts: 25.4%</b><br>vs A+B tracts: 16.2%");
-  // Pooled, not averaged: averaging grade rates would give 25.8% / 14.4%.
+  const pct = (v) => `${(v * 100).toFixed(1)}%`;
+  assert.equal(
+    layout.annotations[0].text,
+    `<b>C+D tracts: ${pct(summary.holc.cd_rate)}</b><br>vs A+B tracts: ${pct(summary.holc.ab_rate)}`
+  );
+  // Pooled rates come straight from the export; the renderer never averages grade rates.
   const fake = { ...summary.holc, cd_rate: 0.5, ab_rate: 0.25 };
   assert.equal(
     holcSpec(fake).layout.annotations[0].text,

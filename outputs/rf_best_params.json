@@ -1,0 +1,12 @@
+{
+  "best_params": {
+    "class_weight": "balanced",
+    "max_depth": 20,
+    "min_samples_split": 5,
+    "n_estimators": 200
+  },
+  "random_state": 42,
+  "cv_folds": 3,
+  "cv_f1": 0.5212422573193694,
+  "sklearn_version": "1.9.0"
+}

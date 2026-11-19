@@ -32,8 +32,9 @@ FEATURE_LABELS = {
     "Pop2010": "Total Population (2010)",
     "Urban": "Urban Tract (yes/no)",
 }
-# Figures documented in docs/fairness_audit.md and outputs/*.json.
-STATIC_FINDINGS = {"fpr_disparity_q4_q1": 5.9}
+FAIRNESS_JSON = ROOT / "outputs" / "fairness_metrics.json"
+# Probabilities and SHAP values are rounded once, here, to the 3 dp the site shows.
+DISPLAY_DP = 3
 
 
 def _r(series: pd.Series, nd: int) -> list:
@@ -86,7 +87,7 @@ def tracts_payload(df: pd.DataFrame) -> dict:
         "id": df["CensusTract"].astype(int).tolist(),
         "lat": _r(df["LATITUDE"], 4),
         "lon": _r(df["LONGITUDE"], 4),
-        "p": _r(df["prediction_probability"], 4),
+        "p": _r(df["prediction_probability"], DISPLAY_DP),
         "pred": df["predicted_label"].astype(int).tolist(),
         "actual": df["LILATracts_1And10"].astype(int).tolist(),
         "black": _r(df["share_black"], 1),
@@ -95,11 +96,11 @@ def tracts_payload(df: pd.DataFrame) -> dict:
     }
     for k in (1, 2, 3):
         payload[f"f{k}"] = [idx[f] for f in df[f"top{k}_feature"]]
-        payload[f"s{k}"] = _r(df[f"top{k}_shap"], 4)
+        payload[f"s{k}"] = _r(df[f"top{k}_shap"], DISPLAY_DP)
     return payload
 
 
-def holc_summary(crosswalk=CROSSWALK, parquet=PARQUET) -> dict:
+def holc_summary(crosswalk=CROSSWALK, parquet=PARQUET, fairness_json=FAIRNESS_JSON) -> dict:
     # Grades E, F, blank and "C " (trailing space) are excluded on purpose to match notebook 05.
     x = pd.read_csv(crosswalk)  # grades left unstripped to match notebook 05 exactly
     preds = pd.read_parquet(parquet, columns=["CensusTract", "predicted_label"])
@@ -110,12 +111,18 @@ def holc_summary(crosswalk=CROSSWALK, parquet=PARQUET) -> dict:
     counts = m["holc_grade"].value_counts().reindex(grades)
     cd = float(m.loc[m["holc_grade"].isin(["C", "D"]), "predicted_label"].mean())
     ab = float(m.loc[m["holc_grade"].isin(["A", "B"]), "predicted_label"].mean())
+    # Held-out and true-label ratios need the train/test split, so notebook 05 computes them.
+    fair = json.loads(pathlib.Path(fairness_json).read_text())
     return {
         "rates": {g: float(rates[g]) for g in grades},
         "counts": {g: int(counts[g]) for g in grades},
         "cd_rate": cd,
         "ab_rate": ab,
         "ratio": cd / ab,
+        "ratio_test": fair["holc_rate_ratio_test"],
+        "label_cd_rate": fair["holc_label_cd_rate"],
+        "label_ab_rate": fair["holc_label_ab_rate"],
+        "label_ratio": fair["holc_label_rate_ratio"],
     }
 
 
@@ -130,7 +137,7 @@ def global_shap(df: pd.DataFrame) -> list[dict]:
 
 def build_summary(df: pd.DataFrame) -> dict:
     preds = pd.read_parquet(PARQUET, columns=["LILATracts_1And10"])
-    fair = json.loads((ROOT / "outputs" / "fairness_metrics.json").read_text())
+    fair = json.loads(FAIRNESS_JSON.read_text())
     rf = json.loads((ROOT / "outputs" / "rf_metrics.json").read_text())
     lr = json.loads((ROOT / "outputs" / "baseline_metrics.json").read_text())
 
@@ -152,7 +159,9 @@ def build_summary(df: pd.DataFrame) -> dict:
             "f1_race_removed": fair["race_removed_f1"],
             "f1_delta_pts": fair["f1_delta"] * 100,
             "counterfactual_flip_rate": fair["counterfactual_flip_rate"],
-            **STATIC_FINDINGS,
+            "fpr_q1": fair["fpr_q1"],
+            "fpr_q4": fair["fpr_q4"],
+            "fpr_disparity_q4_q1": fair["fpr_disparity_q4_q1"],
         },
     }
 

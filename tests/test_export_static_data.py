@@ -37,6 +37,19 @@ def test_probabilities_and_labels_in_range(tracts):
     assert set(p["pred"]) <= {0, 1} and set(p["actual"]) <= {0, 1}
 
 
+def test_probabilities_are_raw_predict_proba(tracts):
+    # An older parquet held sigmoid-squashed scores stuck inside [0.1192, 0.8806].
+    p = ex.tracts_payload(tracts)
+    assert min(p["p"]) < 0.12
+    assert max(p["p"]) > 0.88
+
+
+def test_probabilities_and_shap_rounded_once_to_display_precision(tracts):
+    p = ex.tracts_payload(tracts)
+    for key in ("p", "s1", "s2", "s3"):
+        assert all(v == round(v, 3) for v in p[key][:5000]), key
+
+
 def test_race_shares_are_uncapped(tracts):
     p = ex.tracts_payload(tracts)
     assert max(v for v in p["black"] if v is not None) > 90   # capped model input maxes at 35.4
@@ -58,10 +71,23 @@ def test_missing_atlas_raises(tmp_path):
 
 def test_holc_ratio_matches_notebook():
     s = ex.holc_summary()
-    assert math.isclose(s["ratio"], FAIR["holc_odds_ratio"], rel_tol=1e-9)
+    assert math.isclose(s["ratio"], FAIR["holc_rate_ratio"], rel_tol=1e-9)
+    assert FAIR["holc_odds_ratio"] == FAIR["holc_rate_ratio"]  # legacy key, same value
     assert math.isclose(s["cd_rate"], FAIR["holc_cd_pred_rate"], rel_tol=1e-9)
     assert math.isclose(s["ab_rate"], FAIR["holc_ab_pred_rate"], rel_tol=1e-9)
     assert list(s["rates"]) == ["A", "B", "C", "D"]
+    assert s["ratio_test"] == FAIR["holc_rate_ratio_test"]
+    assert s["label_cd_rate"] == FAIR["holc_label_cd_rate"]
+    assert s["label_ab_rate"] == FAIR["holc_label_ab_rate"]
+    assert s["label_ratio"] == FAIR["holc_label_rate_ratio"]
+
+
+def test_summary_fpr_disparity_comes_from_notebook(tracts):
+    f = ex.build_summary(tracts)["fairness"]
+    assert f["fpr_disparity_q4_q1"] == FAIR["fpr_disparity_q4_q1"]
+    assert f["fpr_q1"] == FAIR["fpr_q1"]
+    assert f["fpr_q4"] == FAIR["fpr_q4"]
+    assert math.isclose(f["fpr_q4"] / f["fpr_q1"], f["fpr_disparity_q4_q1"], rel_tol=1e-9)
 
 
 def test_global_shap_sorted_descending_with_labels(tracts):
