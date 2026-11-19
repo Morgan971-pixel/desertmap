@@ -35,3 +35,5 @@ package cache from the preceding `uv add`/`uv lock` steps, which is itself part 
 workflow and value proposition versus pip's always-cold installs. Even accounting for that, the
 bigger win is reproducibility: pip had no lockfile and resolved floors non-deterministically,
 while `uv.lock` pins exact versions and hashes for every install going forward.
+
+2026-11-18: Streamlit, Gradio and pydeck were removed in favor of the static site in `site/`.
