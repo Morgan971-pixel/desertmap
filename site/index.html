@@ -63,7 +63,7 @@
               <p class="card-label">The USDA definition</p>
               <p>A census tract where residents have <strong>low income</strong> and <strong>low access to a grocery store</strong>: the nearest supermarket is more than 1 mile away in an urban area, or more than 10 miles in a rural one.</p>
             </div>
-            <p class="prose">Food deserts are linked to higher rates of obesity, type 2 diabetes and cardiovascular disease. They aren't random; they cluster in communities that faced decades of disinvestment and discrimination.</p>
+            <p class="prose">Food deserts are linked to higher rates of obesity, type 2 diabetes and cardiovascular disease. They cluster in communities that faced decades of disinvestment and discrimination.</p>
             <p class="prose">We trained a model to predict which tracts qualify, then audited it for racial bias four independent ways.</p>
           </div>
           <div>
@@ -127,7 +127,7 @@
         <h2 class="reveal-up" id="results-heading">Model performance</h2>
         <div class="grid grid-5-4">
           <div>
-            <p class="prose">The Random Forest beats a logistic regression baseline on all four metrics. <strong>F1</strong> balances precision (not crying wolf) against recall (not missing real food deserts), which makes it the number to watch with a 5:1 class imbalance.</p>
+            <p class="prose">The Random Forest beats a logistic regression baseline on all four metrics. <strong>F1</strong> balances precision (not crying wolf) against recall (not missing real food deserts), which makes it the number to watch with a roughly 7:1 class imbalance.</p>
             <div class="table-wrap reveal-up">
               <table class="perf-table">
                 <caption class="visually-hidden">Test-set scores for both models</caption>
@@ -187,7 +187,7 @@
           <div class="control control-range">
             <label for="min-prob">Minimum probability</label>
             <div class="range-row">
-              <input type="range" id="min-prob" min="0.11" max="0.89" step="0.01" value="0.11">
+              <input type="range" id="min-prob" min="0.11" max="0.88" step="0.01" value="0.11">
               <output id="min-prob-readout" for="min-prob" aria-live="off">p ≥ 0.11</output>
             </div>
           </div>
@@ -261,7 +261,7 @@
       <div class="container">
         <p class="sec-label reveal-up">Impact</p>
         <h2 class="reveal-up" id="impact-heading">What auditing changes</h2>
-        <p class="prose">An F1 of <span data-bind="metrics.random_forest.f1">…</span> looks fine in aggregate. The audit shows what that number hides: the errors aren't random, and the communities that most need an accurate answer get the wrong one most often.</p>
+        <p class="prose">An F1 of <span data-bind="metrics.random_forest.f1">…</span> looks fine in aggregate. The audit shows what that number hides: the errors cluster, and the communities that most need an accurate answer get the wrong one most often.</p>
         <div class="grid grid-2">
           <div class="card card-red reveal-left">
             <h3 class="card-label red">Without auditing</h3>
@@ -279,7 +279,7 @@
               <li>C and D tracts are <span data-bind="holc.ratio">…</span>x more likely to be flagged than A and B tracts</li>
               <li>SHAP explains every single prediction</li>
               <li>Mitigations identified: equalized-odds calibration, adversarial debiasing</li>
-              <li>The model becomes evidence of the problem instead of fuel for it</li>
+              <li>The model serves as evidence of the problem</li>
             </ul>
           </div>
         </div>
@@ -293,7 +293,7 @@
             <dt>Split</dt>
             <dd>80% training (58,024 tracts), 20% holdout (14,507 tracts), stratified by target, random seed 42.</dd>
             <dt>Model</dt>
-            <dd>Random Forest: 200 trees, max depth 20, class-balanced weights for the 5:1 imbalance.</dd>
+            <dd>Random Forest tuned by 3-fold grid search on F1: 200 trees, max depth 20, min split 5, class-balanced weights for the roughly 7:1 imbalance.</dd>
             <dt>SHAP</dt>
             <dd>TreeExplainer on a representative 2,000-tract subsample of the test set, with <code>check_additivity=False</code> for speed.</dd>
             <dt>HOLC crosswalk</dt>
@@ -307,9 +307,9 @@
           <h3>The confounding objection</h3>
           <p>Redlined areas became low-income areas, and low-income areas have poor food access. So the HOLC overlap might reflect income, not race.</p>
           <p>The counterfactual test checks exactly that. For every test-set tract we reset racial composition to the national median and held income, poverty rate and every other feature fixed. <strong><span data-bind="fairness.counterfactual_flip_rate">…</span> of predictions changed.</strong> If the pattern were only income geography, removing race shouldn't move individual predictions.</p>
-          <p>Calling it “just income geography” doesn't escape the point either. You would still need to explain why that geography lines up with 90-year-old federal grading maps, and that explanation is the redlining story.</p>
+          <p>Even if the pattern is income geography, that geography lines up with 90-year-old federal grading maps, and the explanation for that match is the redlining story.</p>
           <h3>What we can and can't claim</h3>
-          <p>This is observational work; it doesn't establish causation. What it shows: the pattern holds across four independent tests, racial composition carries signal beyond income and poverty, and that is reason enough to audit before any deployment that affects food access. Responsible deployment doesn't need the causal question settled. It needs the disparity disclosed.</p>
+          <p>This is observational work; it doesn't establish causation. What it shows: the pattern holds across four independent tests, racial composition carries signal beyond income and poverty, and that is reason enough to audit before any deployment that affects food access. Responsible deployment calls for disclosing the disparity, whether or not the causal question is settled.</p>
         </details>
       </div>
     </section>
