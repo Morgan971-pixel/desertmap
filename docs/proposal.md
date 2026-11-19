@@ -29,7 +29,7 @@ This project uses machine learning to quantify that persistence: a Random Forest
 - 72,531 U.S. census tracts covering the entire contiguous United States
 - 147 variables including income, poverty, vehicle access, SNAP participation, store proximity, and demographic composition
 - Target variable: `LILATracts_1And10` — the federally recognized food desert definition (low income AND low access at the 1-mile urban / 10-mile rural threshold)
-- Class distribution: 16.4% positive (food desert), 83.6% negative
+- Class distribution: 12.8% positive (food desert), 87.2% negative
 
 **HOLC crosswalk:** Mapping Inequality v3 (Nelson et al., 2023), spatial join to 2010 census tract boundaries
 - 16,421 tracts with HOLC grades A through D across historically surveyed cities

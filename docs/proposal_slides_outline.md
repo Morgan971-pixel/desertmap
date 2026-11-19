@@ -14,7 +14,7 @@
 **Heading:** 19 Million Americans Live in Food Deserts
 
 **Three-column layout:**
-- Column 1: "16.4% of U.S. census tracts qualify as food deserts under USDA's federal standard"
+- Column 1: "12.8% of U.S. census tracts qualify as food deserts under USDA's federal standard"
 - Column 2: "Food access disparities correlate strongly with race, income, and historical redlining"
 - Column 3: "Policy interventions require knowing WHERE — and knowing whether existing tools are fair"
 
@@ -43,7 +43,7 @@
 - 72,531 census tracts, national scope
 - 9 features: income, poverty, race, vehicle access, SNAP, population, urban/rural
 - 80/20 stratified train/test split
-- Class imbalance: 16.4% food desert — addressed with balanced class weights
+- Class imbalance: 12.8% food desert — addressed with balanced class weights
 
 **Right panel — Models:**
 - Baseline: Logistic Regression
