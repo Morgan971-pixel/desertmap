@@ -44,3 +44,7 @@ docs/model_card/*.aux
 docs/model_card/*.log
 docs/model_card/*.out
 docs/model_card/model_card.pdf
+
+# Vercel CLI link
+.vercel
+site/.vercel
