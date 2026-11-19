@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      # Official USDA Food Access Research Atlas 2019 download, checked against a known fingerprint.
+      - name: Unpack USDA atlas
+        run: |
+          unzip -p data/raw/food-access-research-atlas-2019.zip "Food Access Research Atlas.csv" > data/raw/FoodAccessResearchAtlasData2019.csv
+          echo "00a721633e5ab59f123273ca7d2d10fa191641631bf67884486e088b6b25d2ee  data/raw/FoodAccessResearchAtlasData2019.csv" | sha256sum -c -
+
+      - name: Install Python dependencies
+        run: uv sync --locked
+
+      - name: Python tests
+        run: uv run pytest -q
+
+      # The site, the fairness audit and the SHAP export must all describe one model.
+      - name: Model consistency check
+        run: uv run python scripts/check_consistency.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: JavaScript tests
+        run: node --test tests/js/*.test.js

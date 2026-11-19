@@ -17,9 +17,11 @@ env/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# Data — raw files are large; processed files are reproducible
+# Data: raw files are large; processed files are reproducible.
+# The official USDA atlas zip is committed so CI can run the export tests.
 data/raw/*
 data/processed/
+!data/raw/food-access-research-atlas-2019.zip
 !data/raw/holc_tract_crosswalk.csv
 !data/raw/CenPop2010_Mean_TR.txt
 

@@ -1,5 +1,7 @@
 # DesertMap
 
+[![CI](https://github.com/Morgan971-pixel/desertmap/actions/workflows/ci.yml/badge.svg)](https://github.com/Morgan971-pixel/desertmap/actions/workflows/ci.yml)
+
 **Predicting food desert status across 72,531 U.S. census tracts and auditing the model for redlining-era racial bias**
 
 AI4ALL Ignite Accelerator portfolio project
