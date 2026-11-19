@@ -51,19 +51,29 @@ export function trueIndex(idx, pickedIndex) {
   return null;
 }
 
+// Only a failure of the style document itself is fatal. Tile, sprite and glyph
+// errors all arrive after the first 'styledata', so they are logged and the map
+// keeps loading (the timeout still catches a load that never finishes).
 function waitForLoad(map) {
   return new Promise((resolve, reject) => {
-    let loaded = false;
-    const timer = setTimeout(() => reject(new Error('map load timed out')), LOAD_TIMEOUT_MS);
-    map.once('load', () => {
-      loaded = true;
+    let settled = false;
+    let styleArrived = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
-      resolve();
-    });
+      fn(value);
+    };
+    const timer = setTimeout(() => finish(reject, new Error('map load timed out')), LOAD_TIMEOUT_MS);
+    map.once('styledata', () => { styleArrived = true; });
+    map.once('load', () => finish(resolve));
     map.on('error', (event) => {
-      if (loaded) return;
-      clearTimeout(timer);
-      reject(event && event.error ? event.error : new Error('map failed to load'));
+      const err = event && event.error ? event.error : new Error('map error');
+      if (!settled && !styleArrived) {
+        finish(reject, err);
+        return;
+      }
+      console.warn('map: non-fatal error', err);
     });
   });
 }
@@ -82,7 +92,7 @@ export async function initMap(container, tracts, onSelect) {
       container,
       style: STYLE_URL,
       center: [-96.5, 38.5],
-      zoom: container.clientWidth < 600 ? 2.6 : 3.4,
+      zoom: (container.clientWidth || window.innerWidth) < 600 ? 2.6 : 3.4,
       cooperativeGestures: true,
       attributionControl: { compact: true },
     });
@@ -100,25 +110,37 @@ export async function initMap(container, tracts, onSelect) {
       colors.set(probToColor(Number.isFinite(p) ? p : 0), 4 * i);
     }
 
-    let idx = filterIndices(tracts, 'all', 0);
+    // Touch screens have no hover to clear a highlight, so it would linger after a tap.
+    const canHover = !(typeof window.matchMedia === 'function' && window.matchMedia('(hover: none)').matches);
+
+    // One data object per filter result. deck compares data by reference, so a
+    // selection change reuses it and only the small ring layer updates.
+    const makeData = (idx) => ({ length: idx.length, idx });
+    let data = makeData(filterIndices(tracts, 'all', 0));
     let version = 0;
     let selected = null;
 
+    // Picks resolve against the data of the layer that was drawn, which can lag
+    // a filter change by one frame.
+    const pickedIndex = (info) =>
+      info && info.layer && info.layer.id === 'tracts'
+        ? trueIndex(info.layer.props?.data?.idx ?? data.idx, info.index)
+        : null;
+
     const buildLayers = () => {
-      const current = idx; // accessors stay consistent with this layer's data length
       return [
         new deck.ScatterplotLayer({
           id: 'tracts',
-          data: { length: current.length },
-          getPosition: (_, { index, target }) => {
-            const t = current[index];
+          data,
+          getPosition: (_, { index, data: d, target }) => {
+            const t = d.idx[index];
             target[0] = positions[2 * t];
             target[1] = positions[2 * t + 1];
             target[2] = 0;
             return target;
           },
-          getFillColor: (_, { index, target }) => {
-            const t = current[index] * 4;
+          getFillColor: (_, { index, data: d, target }) => {
+            const t = d.idx[index] * 4;
             target[0] = colors[t];
             target[1] = colors[t + 1];
             target[2] = colors[t + 2];
@@ -130,7 +152,7 @@ export async function initMap(container, tracts, onSelect) {
           radiusMinPixels: 1,
           radiusMaxPixels: 9,
           pickable: true,
-          autoHighlight: true,
+          autoHighlight: canHover,
           highlightColor: [255, 190, 120, 220],
           updateTriggers: { getPosition: version, getFillColor: version },
         }),
@@ -159,15 +181,14 @@ export async function initMap(container, tracts, onSelect) {
       interleaved: false,
       layers: buildLayers(),
       onAfterRender: () => markRendered(),
-      getTooltip: ({ layer, index }) => {
-        if (!layer || layer.id !== 'tracts') return null;
-        const i = trueIndex(idx, index);
+      getTooltip: (info) => {
+        const i = pickedIndex(info);
         if (i == null) return null;
         return { html: tooltipHtml(tracts, i), style: TOOLTIP_STYLE };
       },
       // Fires for taps too; an empty-map click arrives with no layer and clears the selection.
       onClick: (info) => {
-        const i = info && info.layer && info.layer.id === 'tracts' ? trueIndex(idx, info.index) : null;
+        const i = pickedIndex(info);
         selected = i;
         overlay.setProps({ layers: buildLayers() });
         onSelect(i);
@@ -176,18 +197,20 @@ export async function initMap(container, tracts, onSelect) {
 
     await loaded;
     map.addControl(overlay);
+    let fallbackTimer = 0;
     await Promise.race([
       firstRender,
-      new Promise((resolve) => setTimeout(resolve, FIRST_RENDER_TIMEOUT_MS)),
+      new Promise((resolve) => { fallbackTimer = setTimeout(resolve, FIRST_RENDER_TIMEOUT_MS); }),
     ]);
+    clearTimeout(fallbackTimer);
 
     return {
       setFilter(view, minProb) {
-        idx = filterIndices(tracts, view, minProb);
+        data = makeData(filterIndices(tracts, view, minProb));
         version++;
         selected = null;
         overlay.setProps({ layers: buildLayers() });
-        return idx.length;
+        return data.length;
       },
     };
   } catch (err) {
