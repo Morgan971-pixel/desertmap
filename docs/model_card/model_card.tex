@@ -89,8 +89,8 @@ The model flags tracts in formerly redlined neighborhoods (HOLC grades C and D) 
 % ==== model details
 \section*{Model details}
 \begin{itemize}
-  \item \lbl{Model} scikit-learn Random Forest: 200 trees, max depth 20, class-balanced weights. Baseline: logistic regression.
-  \item \lbl{Task} Binary classification of \texttt{LILATracts\_1And10}, the USDA flag for a tract that is low income and low access (over 1 mile from a supermarket if urban, over 10 miles if rural).
+  \item \lbl{Model} scikit-learn Random Forest tuned by 3-fold grid search on F1: 200 trees, max depth 20, min split 5, class-balanced weights. Baseline: logistic regression.
+  \item \lbl{Task} Binary classification of \texttt{LILATracts\_1And10}, the USDA flag for a tract that is low income and low access (a large share of residents more than 1 mile from a supermarket if urban, 10 miles if rural).
   \item \lbl{Inputs (9)} Median family income; poverty rate; \% Black, \% Hispanic and \% White population; \% households with no vehicle; \% SNAP households; total population (2010); urban flag. No HOLC grades, ZIP codes or place names.
   \item \lbl{Explanations} SHAP (TreeExplainer) scores how far each feature pushed each tract's prediction.
 \end{itemize}
@@ -131,7 +131,7 @@ Logistic regression & \LrFOneCell & \LrPrecCell & \LrRecCell & \LrAucCell \\
 \bottomrule
 \end{tabular}\par}
 \vspace{3pt}
-{\footnotesize\color{muted}Bold orange marks the better model on each metric.}
+{\footnotesize\color{muted}Bold orange marks the better model on each metric. Metrics are from the original June 2026 run; a re-run under scikit-learn 1.9 picks the same settings and scores F1 0.533.}
 
 The forest leads on F1, precision and ROC-AUC. The baseline finds more true food deserts (recall \LrRec) but raises far more false alarms (precision \LrPrec).
 
@@ -144,15 +144,15 @@ Four checks, each built to test a different route by which race could enter the 
   \item \lbl{Counterfactual probe} Setting \% Black and \% Hispanic to the national median, all else fixed, flips \textbf{\FlipRate} of food-desert predictions to ``not a food desert''.
   \item \lbl{HOLC overlay} C- and D-graded tracts are predicted food deserts at \textbf{\HolcRatio\texttimes{}} the A+B rate. This is a ratio of rates (\CdRate{} over \AbRate); the rate climbs with every grade from A to D.
 \end{enumerate}
-{\footnotesize\color{muted} Checks 1 to 3 use the audit notebook's refit of the forest (same setup), whose full-feature F1 is \FairFOne. Check 4 scores all \NTracts{} tracts, training tracts included.}
+{\footnotesize\color{muted} Checks 1 to 3 use a separate audit refit (200 trees, depth 20, min split 2; F1 \FairFOne, precision 0.523, recall 0.459), a different operating point from the tuned model above. Check 4 uses the tuned model's predictions for all \NTracts{} tracts, training tracts included.}
 
 % ==== subgroups
 \section*{Subgroups examined}
-We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. The Hispanic pattern differs from the Black one: false positives peak in the third quartile, and the most Hispanic quartile has the lowest recall, so there the model tends to miss real food deserts. The audit has no urban versus rural or regional breakdown yet, and rural tracts are where the Atlas data is thinnest.
+We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. The Hispanic pattern differs from the Black one: false positives peak in the third quartile, and the most Hispanic quartile has the lowest recall, so there the model tends to miss real food deserts (audit refit, test set). The audit has no urban versus rural or regional breakdown yet, and rural tracts are where the Atlas data is thinnest.
 
 \begin{center}
 \includegraphics[width=\linewidth]{fig_holc.pdf}
-\captionof{figure}{Predicted food-desert rate by HOLC grade (\HolcN{} graded tracts). HOLC is the Home Owners' Loan Corporation, a federal agency that graded neighborhoods in over 200 cities between 1935 and 1940; grade D went almost entirely to Black and immigrant communities and shut them out of mortgage lending.}
+\captionof{figure}{Predicted food-desert rate by HOLC grade (\HolcN{} graded tracts). HOLC is the Home Owners' Loan Corporation, a federal agency that graded neighborhoods in over 200 cities between 1935 and 1940; grade D went predominantly to Black and immigrant neighborhoods, and the maps shaped where banks lent.}
 \end{center}
 
 % ==== global drivers
@@ -161,9 +161,9 @@ We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. 
 \includegraphics[width=\linewidth]{fig_shap.pdf}
 \captionof{figure}{Each feature's share of summed absolute SHAP values, counted over every tract's top three drivers (\NMapped{} mapped tracts).}
 \end{center}
-A longer bar means the feature moved more predictions further; the chart shows size of influence and leaves out direction. Income and poverty dominate (\ShapIncomeShare{} and \ShapPovertyShare). The three race shares add up to \ShapRaceShare, with \% Hispanic in fifth place, and that small share still decides enough close calls to flip a third of positives in the counterfactual probe.
+A longer bar means the feature moved more predictions further; the chart shows size of influence and leaves out direction. Income and poverty dominate (\ShapIncomeShare{} and \ShapPovertyShare). The three race shares add up to \ShapRaceShare, with \% Hispanic in fifth place. On the audit refit, setting \% Black and \% Hispanic to the national median flips a third of positive predictions.
 
-SHAP values exist for every tract, and the website shows each tract's three strongest drivers so a reviewer can check any single prediction. The notebook's global summary plots use \mbox{TreeExplainer} on a 2,000-tract test subsample.
+SHAP values exist for every tract, and the website shows each tract's three strongest drivers so a reviewer can check any single prediction. The audit notebook's SHAP plots use a 2,000-tract test subsample; notebook 04's summary plot uses the full test set.
 
 \columnbreak
 % ==== limitations
@@ -172,7 +172,7 @@ SHAP values exist for every tract, and the website shows each tract's three stro
 {\headfont\fontsize{10.5}{12}\selectfont\color{risk}LIMITATIONS AND RISKS}\par\vspace{2pt}
 \begin{itemize}
   \item \lbl{Observational} The audit shows association. It cannot say that redlining caused today's food deserts, or that race causes the model's errors.
-  \item \lbl{Race as input} \% Black, \% Hispanic and \% White are model inputs. We kept them so the audit could measure their effect; any deployment must justify that choice or drop them (cost: \FairDeltaPts{} F1 points).
+  \item \lbl{Race as input} \% Black, \% Hispanic and \% White are model inputs. We kept them so the audit could measure their effect; any deployment must justify that choice or drop them (removing \% Black and \% Hispanic alone cost \FairDeltaPts{} F1 points; \% White was not tested).
   \item \lbl{Capped features} IQR capping means model inputs differ from raw census shares in extreme tracts.
   \item \lbl{Dated geography} 2019 data on 2010 tract boundaries. The HOLC overlay covers only surveyed cities, mostly older Northern and Midwestern ones.
   \item \lbl{Imbalance} About \ImbalanceRatio{} negatives per food desert. At precision \RfPrec, most flagged tracts are false alarms.
@@ -182,7 +182,7 @@ SHAP values exist for every tract, and the website shows each tract's three stro
 
 % ==== ethics
 \section*{Ethical considerations}
-Food-access labels steer grants and store siting. A biased model could send resources away from, or stigmatize, the neighborhoods redlining already harmed, so we publish the disparity with the model. Before any real use we recommend store-level distance data, per-quartile thresholds that equalize false positive rates (equalized odds), uncertainty reported with every prediction, and ongoing monitoring of false positive rates by quartile.
+Food-access labels steer grants and store siting. A biased model could send resources away from, or stigmatize, the neighborhoods redlining already harmed, so we publish the disparity with the model. Before any real use we recommend store-level distance data, per-quartile thresholds that narrow the false positive rate gap (equalized odds or threshold adjustment), uncertainty reported with every prediction, and ongoing monitoring of false positive rates by quartile.
 
 % ==== reproduce
 \section*{Reproduce}
