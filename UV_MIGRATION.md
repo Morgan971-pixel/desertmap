@@ -30,7 +30,7 @@
 
 ## Takeaway
 
-The 0.94s uv number is not an apples-to-apples cold-cache comparison, it reflects uv's local
+The 0.94s uv number is a warm-cache figure: it reflects uv's local
 package cache from the preceding `uv add`/`uv lock` steps, which is itself part of uv's normal
 workflow and value proposition versus pip's always-cold installs. Even accounting for that, the
 bigger win is reproducibility: pip had no lockfile and resolved floors non-deterministically,

@@ -82,6 +82,8 @@ def write_numbers(s: dict) -> None:
         "FoodDesertShare": pct(share) + r"\%",
         "ImbalanceRatio": f"{(1 - share) / share:.1f}",
         "HolcRatio": f"{holc['ratio']:.2f}",
+        "HolcRatioTest": f"{holc['ratio_test']:.2f}",
+        "HolcLabelRatio": f"{holc['label_ratio']:.2f}",
         "CdRate": pct(holc["cd_rate"]) + r"\%",
         "AbRate": pct(holc["ab_rate"]) + r"\%",
         "HolcN": thousands(sum(holc["counts"].values())),

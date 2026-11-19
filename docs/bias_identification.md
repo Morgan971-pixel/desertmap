@@ -1,8 +1,8 @@
-# Bias Identification — DesertMap
+# Bias Identification: DesertMap
 
 ## Overview
 
-This document identifies sources of bias in the DesertMap project's data and methodology, and proposes concrete mitigation strategies. Bias identification is conducted as part of the responsible AI development process — not as an afterthought to model completion.
+This document identifies sources of bias in the DesertMap project's data and methodology, and proposes concrete mitigation strategies. Bias identification is conducted as part of the responsible AI development process, starting before any model is trained.
 
 ---
 
@@ -12,7 +12,7 @@ This document identifies sources of bias in the DesertMap project's data and met
 
 **Description:** The USDA Food Access Research Atlas has more complete and granular data for urban census tracts than for rural ones. Rural tracts with sparse population may have missing or estimated values for key features (e.g., distance to nearest supermarket).
 
-**Risk:** The model may perform well in urban settings but produce unreliable predictions in rural or semi-rural tracts — populations that may face the most acute food access challenges.
+**Risk:** The model may perform well in urban settings but produce unreliable predictions in rural or semi-rural tracts, populations that may face the most acute food access challenges.
 
 **Impact Level:** Medium
 
@@ -22,7 +22,7 @@ This document identifies sources of bias in the DesertMap project's data and met
 
 **Description:** The three data sources span different time periods. HOLC redlining maps were produced in the 1930s. The ACS 5-Year Estimates are rolling (e.g., 2019–2023). The USDA food access data has its own survey year. Features from different temporal contexts are merged and treated as contemporaneous.
 
-**Risk:** Temporal mismatch may create spurious correlations — a neighborhood may have changed significantly since its HOLC grade was assigned, but the model treats these as equivalent signals.
+**Risk:** Temporal mismatch may create spurious correlations: a neighborhood may have changed significantly since its HOLC grade was assigned, but the model treats these as equivalent signals.
 
 **Impact Level:** Medium
 
@@ -34,17 +34,17 @@ This document identifies sources of bias in the DesertMap project's data and met
 
 **Risk:** The model learns to predict an administrative label that may not reflect actual community food security. Predicting a "food desert" tract may be a proxy for "lacks a large chain supermarket" rather than "lacks food access."
 
-**Impact Level:** High — this is a fundamental label validity concern that should be disclosed in the proposal and final presentation.
+**Impact Level:** High. This is a fundamental label validity concern that should be disclosed in the proposal and final presentation.
 
 ---
 
 ### 4. Demographic Encoding and Proxy Discrimination
 
-**Description:** Race and income are present as features in the merged dataset. Because food desert status is historically correlated with race (a downstream effect of redlining), the model may learn to use race as a shortcut predictor. This means the model is at risk of encoding discrimination rather than discovering it.
+**Description:** Race and income are present as features in the merged dataset. Because food desert status is historically correlated with race (a downstream effect of redlining), the model may learn to use race as a shortcut predictor. The model could then reproduce that discrimination in its predictions.
 
-**Risk:** If deployed, a model that predicts food deserts using race could be used to justify continued disinvestment in communities of color — algorithmic redlining.
+**Risk:** If deployed, a model that predicts food deserts using race could be used to justify continued disinvestment in communities of color: algorithmic redlining.
 
-**Impact Level:** High — this is the central ethical risk of the project and the primary subject of the fairness audit.
+**Impact Level:** High. This is the central ethical risk of the project and the primary subject of the fairness audit.
 
 ---
 
@@ -71,12 +71,12 @@ This document identifies sources of bias in the DesertMap project's data and met
 - Run both the original and counterfactual tracts through the trained model.
 - Count and analyze the tracts where the prediction changes solely due to the race feature perturbation.
 
-**Outcome:** Identifies census tracts where race is the decisive factor in the model's prediction — a direct test of counterfactual fairness.
+**Outcome:** Identifies census tracts where race is the decisive factor in the model's prediction, a direct test of counterfactual fairness.
 
-**Implementation:** `notebooks/06_xai.ipynb` — counterfactual section
+**Implementation:** `notebooks/06_xai.ipynb`, counterfactual section
 
 ---
 
 ## Connection to Essential Question
 
-Identifying these biases before model training is not just good practice — it is the practice of responsible AI development. The development process itself is the intervention. A team that trains a food desert model and only discovers racial bias after deployment has failed the communities that model was meant to serve.
+Identifying these biases before model training is the core of responsible AI development. The development process itself is the intervention. A team that trains a food desert model and only discovers racial bias after deployment has failed the communities that model was meant to serve.

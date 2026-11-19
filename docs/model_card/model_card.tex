@@ -79,7 +79,7 @@
 \centering{\headfont\fontsize{34}{36}\selectfont\color{accentdark}\HolcRatio\texttimes{}}\par
 {\footnotesize\color{muted}\textbf{KEY FINDING}}
 \tcblower
-The model flags tracts in formerly redlined neighborhoods (HOLC grades C and D) as food deserts at \textbf{\HolcRatio{} times the rate} of A- and B-graded tracts: \CdRate{} against \AbRate. It never saw a HOLC grade; it rebuilt the 1930s map from present-day income, poverty and demographic data, so any use of its predictions inherits that history unless someone audits for it.
+The model flags tracts in formerly redlined neighborhoods (HOLC grades C and D) as food deserts at \textbf{\HolcRatio{} times the rate} of A- and B-graded tracts: \CdRate{} against \AbRate. It never saw a HOLC grade; it rebuilt the 1930s map from present-day income, poverty and demographic data, so any use of its predictions inherits that history unless someone audits for it. Actual food desert rates differ by \HolcLabelRatio\texttimes{} between the same grades, so the gap is real and the model tracks it.
 \end{tcolorbox}
 
 \vspace{2pt}
@@ -141,14 +141,14 @@ Four checks, each built to test a different route by which race could enter the 
 \begin{enumerate}
   \item \lbl{F1 ablation} Refitting without \% Black and \% Hispanic drops F1 from \FairFOne{} to \FairFOneNoRace{} (\FairDeltaPts{} points). Race shares carry signal that income and poverty do not replace.
   \item \lbl{Quartile FPR} Across quartiles of \% Black, the top quartile's false positive rate is \textbf{\FprDisparity\texttimes{}} the bottom one's.
-  \item \lbl{Counterfactual probe} Setting \% Black and \% Hispanic to the national median, all else fixed, flips \textbf{\FlipRate} of food-desert predictions to ``not a food desert''.
-  \item \lbl{HOLC overlay} C- and D-graded tracts are predicted food deserts at \textbf{\HolcRatio\texttimes{}} the A+B rate. This is a ratio of rates (\CdRate{} over \AbRate); the rate climbs with every grade from A to D.
+  \item \lbl{Counterfactual probe} Setting \% Black and \% Hispanic to their held-out median, all else fixed, flips \textbf{\FlipRate} of held-out food-desert predictions to ``not a food desert''.
+  \item \lbl{HOLC overlay} C- and D-graded tracts are predicted food deserts at \textbf{\HolcRatio\texttimes{}} the A+B rate. This is a ratio of rates (\CdRate{} over \AbRate); the rate climbs with every grade from A to D. Held-out tracts alone give \HolcRatioTest\texttimes; true labels give \HolcLabelRatio\texttimes.
 \end{enumerate}
-{\footnotesize\color{muted} Checks 1 to 3 use a separate audit refit (200 trees, depth 20, min split 2; F1 \FairFOne, precision 0.523, recall 0.459), a different operating point from the tuned model above. Check 4 uses the tuned model's predictions for all \NTracts{} tracts, training tracts included.}
+{\footnotesize\color{muted} All four checks use the tuned model above. Checks 1 to 3 use the held-out test set; check 4 covers all \NTracts{} tracts, training tracts included.}
 
 % ==== subgroups
 \section*{Subgroups examined}
-We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. The Hispanic pattern differs from the Black one: false positives peak in the third quartile, and the most Hispanic quartile has the lowest recall, so there the model tends to miss real food deserts (audit refit, test set). The audit has no urban versus rural or regional breakdown yet, and rural tracts are where the Atlas data is thinnest.
+We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. The Hispanic pattern differs from the Black one: false positives barely change across quartiles (11\% to 13\%), and the most Hispanic quartile has the lowest recall, so there the model tends to miss real food deserts (test set). The audit has no urban versus rural or regional breakdown yet, and rural tracts are where the Atlas data is thinnest.
 
 \begin{center}
 \includegraphics[width=\linewidth]{fig_holc.pdf}
@@ -161,9 +161,9 @@ We broke results out by \% Black quartile, \% Hispanic quartile and HOLC grade. 
 \includegraphics[width=\linewidth]{fig_shap.pdf}
 \captionof{figure}{Each feature's share of summed absolute SHAP values, counted over every tract's top three drivers (\NMapped{} mapped tracts).}
 \end{center}
-A longer bar means the feature moved more predictions further; the chart shows size of influence and leaves out direction. Income and poverty dominate (\ShapIncomeShare{} and \ShapPovertyShare). The three race shares add up to \ShapRaceShare, with \% Hispanic in fifth place. On the audit refit, setting \% Black and \% Hispanic to the national median flips a third of positive predictions.
+A longer bar means the feature moved more predictions further; the chart shows size of influence and leaves out direction. Income and poverty dominate (\ShapIncomeShare{} and \ShapPovertyShare). The three race shares add up to \ShapRaceShare, with \% Hispanic in sixth place. Rank understates effect: the counterfactual probe still flips one in five positive predictions.
 
-SHAP values exist for every tract, and the website shows each tract's three strongest drivers so a reviewer can check any single prediction. The audit notebook's SHAP plots use a 2,000-tract test subsample; notebook 04's summary plot uses the full test set.
+SHAP values exist for every tract, and the website shows each tract's three strongest drivers so a reviewer can check any single prediction. Values come from path-dependent TreeSHAP and add up to each tract's predicted probability.
 
 \columnbreak
 % ==== limitations

@@ -1,4 +1,4 @@
-# SMART Goals — DesertMap
+# SMART Goals: DesertMap
 
 ## Project Goal
 

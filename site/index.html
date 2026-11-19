@@ -64,12 +64,12 @@
               <p>A census tract where residents have <strong>low income</strong> and <strong>low access to a grocery store</strong>: the nearest supermarket is more than 1 mile away in an urban area, or more than 10 miles in a rural one.</p>
             </div>
             <p class="prose">Food deserts are linked to higher rates of obesity, type 2 diabetes and cardiovascular disease. They cluster in communities that faced decades of disinvestment and discrimination.</p>
-            <p class="prose">We trained a model to predict which tracts qualify, then audited it for racial bias four independent ways.</p>
+            <p class="prose">We trained a model to predict which tracts qualify, then audited it for racial bias four ways.</p>
           </div>
           <div>
             <div class="card stat-card reveal-scale d1">
               <span class="stat-num">19M</span>
-              <span class="stat-text">Americans live in food deserts, about 1 in 17</span>
+              <span class="stat-text">Americans live in food deserts, about 1 in 16</span>
             </div>
             <div class="card stat-card reveal-scale d2">
               <span class="stat-num"><span data-bind="n_tracts">…</span></span>
@@ -127,7 +127,7 @@
         <h2 class="reveal-up" id="results-heading">Model performance</h2>
         <div class="grid grid-5-4">
           <div>
-            <p class="prose">The Random Forest beats a logistic regression baseline on all four metrics. <strong>F1</strong> balances precision (not crying wolf) against recall (not missing real food deserts), which makes it the number to watch with a roughly 7:1 class imbalance.</p>
+            <p class="prose">The Random Forest beats a logistic regression baseline on F1, precision and ROC-AUC. The baseline finds more food deserts (higher recall) by raising far more false alarms. <strong>F1</strong> balances precision (not crying wolf) against recall (not missing real food deserts), which makes it the number to watch with a roughly 7:1 class imbalance.</p>
             <div class="table-wrap reveal-up">
               <table class="perf-table">
                 <caption class="visually-hidden">Test-set scores for both models</caption>
@@ -161,9 +161,9 @@
           </div>
           <div>
             <h3 class="card-label">What drives predictions overall?</h3>
-            <p class="note">Total SHAP importance across all <span data-bind="n_tracts">…</span> tracts. Longer bar, stronger driver.</p>
+            <p class="note">Total SHAP importance across all <span data-bind="n_mapped">…</span> mapped tracts. Longer bar, stronger driver.</p>
             <div id="chart-global-shap" class="chart-slot" data-chart-label="Bar chart of total SHAP importance per feature"></div>
-            <p class="note">Median family income and poverty rate dominate, but <strong class="accent">racial composition features make the top five</strong>, carrying signal that income and poverty don't explain.</p>
+            <p class="note">Median family income and poverty rate dominate. Racial composition ranks lower overall; <strong class="accent">the audit below measures how much it still moves predictions</strong>.</p>
           </div>
         </div>
       </div>
@@ -187,8 +187,8 @@
           <div class="control control-range">
             <label for="min-prob">Minimum probability</label>
             <div class="range-row">
-              <input type="range" id="min-prob" min="0.11" max="0.88" step="0.01" value="0.11">
-              <output id="min-prob-readout" for="min-prob" aria-live="off">p ≥ 0.11</output>
+              <input type="range" id="min-prob" min="0" max="1" step="0.01" value="0">
+              <output id="min-prob-readout" for="min-prob" aria-live="off">p ≥ 0.00</output>
             </div>
           </div>
         </div>
@@ -210,7 +210,7 @@
                   <tr><th scope="row">Prediction probability</th><td id="tract-prob" class="accent"></td></tr>
                   <tr><th scope="row">% Black residents</th><td id="tract-black"></td></tr>
                   <tr><th scope="row">% Hispanic residents</th><td id="tract-hisp"></td></tr>
-                  <tr><th scope="row">% White residents</th><td id="tract-white"></td></tr>
+                  <tr><th scope="row">% White residents (incl. Hispanic)</th><td id="tract-white"></td></tr>
                 </tbody>
               </table>
             </div>
@@ -228,14 +228,14 @@
       <div class="container">
         <p class="sec-label reveal-up">The finding</p>
         <h2 class="reveal-up" id="finding-heading">The model remembered something it was never shown</h2>
-        <blockquote class="pull-quote reveal-left">AI trained on present data inherits past policy. An audit catches it. Deployment without one doesn't.</blockquote>
+        <blockquote class="pull-quote reveal-left">AI trained on present data inherits past policy. An audit is how you catch it.</blockquote>
         <p class="prose">Between 1935 and 1940, the federal Home Owners' Loan Corporation (HOLC) graded neighborhoods in more than 200 U.S. cities. <strong>Grade A (“Best”)</strong> went to mostly white, affluent areas. <strong class="red">Grade D (“Hazardous”)</strong> went almost entirely to Black and immigrant neighborhoods, which then lost access to mortgages and investment for decades.</p>
         <p class="prose">Those grades shaped where grocery stores opened, where roads went and which communities got public money. Our model trained on <em>modern</em> data and never saw a single HOLC grade. Then we laid its predictions over the 1930s maps.</p>
         <div class="bias-grid">
           <article class="bcard reveal-up d1">
             <h3 class="bcard-title">Redlining disparity</h3>
             <p class="bcard-num bcard-orange"><span data-bind="holc.ratio" class="counter">…</span>x</p>
-            <p class="bcard-desc">Tracts graded C or D are <span data-bind="holc.ratio">…</span>x more likely to be predicted food deserts than tracts graded A or B (<span data-bind="holc.cd_rate">…</span> vs <span data-bind="holc.ab_rate">…</span>).</p>
+            <p class="bcard-desc">Tracts graded C or D are <span data-bind="holc.ratio">…</span>x more likely to be predicted food deserts than tracts graded A or B (<span data-bind="holc.cd_rate">…</span> vs <span data-bind="holc.ab_rate">…</span>). Held-out tracts alone: <span data-bind="holc.ratio_test">…</span>x. Actual food desert rates: <span data-bind="holc.label_ratio">…</span>x, so the model tracks a real gap.</p>
           </article>
           <article class="bcard reveal-up d2">
             <h3 class="bcard-title">Unequal mistakes</h3>
@@ -245,7 +245,7 @@
           <article class="bcard reveal-up d3">
             <h3 class="bcard-title">Change race, change the answer</h3>
             <p class="bcard-num bcard-red"><span data-bind="fairness.counterfactual_flip_rate" class="counter">…</span></p>
-            <p class="bcard-desc">Reset racial composition to the national median, hold everything else fixed, and <span data-bind="fairness.counterfactual_flip_rate">…</span> of food desert predictions flip to “not a food desert.” (Counterfactual probe.)</p>
+            <p class="bcard-desc">Set % Black and % Hispanic to the held-out median, hold everything else fixed, and <span data-bind="fairness.counterfactual_flip_rate">…</span> of food desert predictions flip to “not a food desert.” (Counterfactual probe.)</p>
           </article>
           <article class="bcard reveal-up d4">
             <h3 class="bcard-title">Race carries its own signal</h3>
@@ -295,22 +295,22 @@
             <dt>Model</dt>
             <dd>Random Forest tuned by 3-fold grid search on F1: 200 trees, max depth 20, min split 5, class-balanced weights for the roughly 7:1 imbalance.</dd>
             <dt>SHAP</dt>
-            <dd>TreeExplainer on a representative 2,000-tract subsample of the test set, with <code>check_additivity=False</code> for speed.</dd>
+            <dd>TreeSHAP (path-dependent) on every tract. Each tract's values plus the base rate add up to its predicted probability.</dd>
             <dt>HOLC crosswalk</dt>
             <dd>Mapping Inequality v3 (Nelson et al., 2023), spatially joined to 2010 tract boundaries. Used only to group predictions afterwards, never as a training feature.</dd>
             <dt>Fairness audit</dt>
-            <dd>(1) race-removed model delta, (2) false positive rates by quartile, (3) counterfactual racial composition probe, (4) HOLC overlay after prediction.</dd>
+            <dd>(1) race-removed model delta, (2) false positive rates by quartile, (3) counterfactual racial composition probe, (4) HOLC overlay after prediction. All four use the same tuned model.</dd>
           </dl>
           <p><a href="model-card.pdf">Read the full model card (PDF, 2 pages).</a></p>
         </details>
         <details class="disclosure">
           <summary>Limitations</summary>
           <h3>The confounding objection</h3>
-          <p>Redlined areas became low-income areas, and low-income areas have poor food access. So the HOLC overlap might reflect income, not race.</p>
-          <p>The counterfactual test checks exactly that. For every test-set tract we reset racial composition to the national median and held income, poverty rate and every other feature fixed. <strong><span data-bind="fairness.counterfactual_flip_rate">…</span> of predictions changed.</strong> If the pattern were only income geography, removing race shouldn't move individual predictions.</p>
+          <p>Redlined areas became low-income areas, and low-income areas have poor food access. So the HOLC overlap might reflect income alone.</p>
+          <p>The counterfactual test checks exactly that. For every held-out tract the model flags as a food desert, we set % Black and % Hispanic to their held-out median and kept income, poverty rate and every other feature fixed. <strong><span data-bind="fairness.counterfactual_flip_rate">…</span> of those predictions flipped.</strong> If the pattern were only income geography, removing race shouldn't move individual predictions.</p>
           <p>Even if the pattern is income geography, that geography lines up with 90-year-old federal grading maps, and the explanation for that match is the redlining story.</p>
           <h3>What we can and can't claim</h3>
-          <p>This is observational work; it doesn't establish causation. What it shows: the pattern holds across four independent tests, racial composition carries signal beyond income and poverty, and that is reason enough to audit before any deployment that affects food access. Responsible deployment calls for disclosing the disparity, whether or not the causal question is settled.</p>
+          <p>This is observational work; it doesn't establish causation. What it shows: the pattern holds across four tests, racial composition carries signal beyond income and poverty, and that is reason enough to audit before any deployment that affects food access. Responsible deployment calls for disclosing the disparity, whether or not the causal question is settled.</p>
         </details>
       </div>
     </section>

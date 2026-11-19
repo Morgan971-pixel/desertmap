@@ -106,7 +106,7 @@ function formatFor(key, value) {
     const scaled = value * 100;
     return { text: scaled.toFixed(1) + '%', count: +scaled.toFixed(1), decimals: 1, suffix: '%' };
   }
-  if (key === 'holc.ratio') {
+  if (key === 'holc.ratio' || key === 'holc.ratio_test' || key === 'holc.label_ratio') {
     return { text: value.toFixed(2), count: value, decimals: 2, suffix: '' };
   }
   if (key === 'fairness.f1_delta_pts' || key === 'fairness.fpr_disparity_q4_q1') {
@@ -264,7 +264,7 @@ let tracts = null;
 let controller = null;
 let loading = false;
 let selectToken = 0;
-const state = { view: 'all', minProb: 0.11 };
+const state = { view: 'all', minProb: 0 };
 
 function renderReadout() {
   const out = $('min-prob-readout');
