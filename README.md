@@ -1,6 +1,11 @@
 # DesertMap
 
 [![CI](https://github.com/Morgan971-pixel/desertmap/actions/workflows/ci.yml/badge.svg)](https://github.com/Morgan971-pixel/desertmap/actions/workflows/ci.yml)
+[![Live site](https://img.shields.io/badge/live-desertmap.vercel.app-0d9488)](https://desertmap.vercel.app)
+[![Model card](https://img.shields.io/badge/model%20card-PDF-0d9488)](docs/model_card/desertmap_model_card.pdf)
+[![Reproducible](https://img.shields.io/badge/numbers-reproducible-brightgreen)](#reproducing-the-full-pipeline)
+![Python](https://img.shields.io/badge/python-3.11-blue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Predicting food desert status across 72,531 U.S. census tracts and auditing the model for redlining-era racial bias**
 
